@@ -40,10 +40,10 @@ class CoupledStripEnv(Env):
         self.action_space: Box = Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32) #type:ignore
         self.observation_space: Box = Box(low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32) #type:ignore
     
-    def getControlPoints(self,action:NDArray[np.float64],
+    def _get_control_points(self,action:NDArray[np.float64],
                      side: str) -> NDArray[np.float64]:
         """
-        getControlPoints
+        _get_control_points
         
         Generate control points for a Bézier curve based on the specified side.
         The control points are determined by the side of the microstrip structure
@@ -86,10 +86,10 @@ class CoupledStripEnv(Env):
         
         return np.array([P0, P1, P2, P3])  # Return control points as a numpy array
 
-    def getBezierCurve(self, action: NDArray[np.float64], 
+    def get_bezier_curve(self, action: NDArray[np.float64], 
                     side: str) -> tuple[NDArray[np.float64],NDArray[np.float64],NDArray[np.float64]]:
         """
-        getBezierCurve 
+        get_bezier_curve 
         
         Generate a Bézier curve based on the provided action array.
         Bézier curves are defined by control points, and this function computes
@@ -114,12 +114,12 @@ class CoupledStripEnv(Env):
         t: NDArray[np.float64] = t_vals[:, np.newaxis] # num_ptsX1
 
         # stack the control points to do matrix multiplication
-        control_points: NDArray[np.float64] = self.getControlPoints(action,side)
+        control_points: NDArray[np.float64] = self._get_control_points(action,side)
         
-        B0 = (1 - t)**3
-        B1 = 3 * t * (1 - t)**2
-        B2 = 3 * t**2 * (1 - t)
-        B3 = t**3
+        B0: NDArray = (1 - t)**3
+        B1: NDArray = 3 * t * (1 - t)**2
+        B2: NDArray = 3 * t**2 * (1 - t)
+        B3: NDArray = t**3
         # Create a matrix of coefficients for the cubic Bézier curve
         curve_coefficients: NDArray[np.float64] = np.column_stack((B0, B1, B2, B3)) # num_ptsX4
         # Calculate the curve points using matrix multiplication
