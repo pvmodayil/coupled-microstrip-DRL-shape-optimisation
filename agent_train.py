@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from coupledstrip_env import CoupledStripEnv
+from _hyper_parameter import get_hyper_params
 
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback
@@ -39,7 +40,7 @@ def create_directories(**kwargs):
         else:
             print(f"Directory already exists: {dir_name}")
  
-def train(env: CoupledStripEnv, model_dir: str, log_dir: str) -> None:
+def train(env: CoupledStripEnv, model_dir: str, log_dir: str, device: torch.device) -> None:
     """
     Train the RL agent using the specified environment.
     
@@ -52,8 +53,19 @@ def train(env: CoupledStripEnv, model_dir: str, log_dir: str) -> None:
     log_dir : str
         Directory to save training logs.
     """
+    # Get the hyperparameters
+    policy_kwargs: dict
+    hyperparams: dict
+    policy_kwargs, hyperparams = get_hyper_params()
+    
     # Initialize the RL agent
-    model = SAC("MlpPolicy", env, verbose=0, tensorboard_log=log_dir)
+    model = SAC("MlpPolicy", 
+                env,  
+                verbose=0, 
+                policy_kwargs=policy_kwargs,
+                tensorboard_log=log_dir,
+                device=device,
+                **hyperparams)  
     
     # Train the agent
     model.learn(total_timesteps=10000)
@@ -71,7 +83,7 @@ def main() -> None:
     create_directories(mdirRoot = model_dir, ldirRoot = log_dir, idirRoot = image_dir)
     
     logger.info(f"CUDA available: {torch.cuda.is_available()}")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if __name__ == "__main__":
     main()
