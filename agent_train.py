@@ -12,7 +12,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
-from .coupledstrip_env import CoupledStripEnv
+from coupledstrip_env import CoupledStripEnv
 
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback
@@ -21,7 +21,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 import logging
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 #####################################################################################
 #                                     Functions
