@@ -12,8 +12,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
-from coupledstrip_env import CoupledStripEnv
-from _hyper_parameter import get_hyper_params
+from .coupledstrip_env import CoupledStripEnv
+from ._hyper_parameter import get_hyper_params
 
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback
