@@ -29,7 +29,7 @@ logger: logging.Logger = logging.getLogger(__name__)
 #####################################################################################
 # cretae directories
 ###############################################################
-def create_directories(**kwargs):
+def create_directories(**kwargs) -> None:
     """
     takes in n number of directory paths and creates directories
     """
