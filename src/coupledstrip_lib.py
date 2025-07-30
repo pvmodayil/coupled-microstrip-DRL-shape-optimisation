@@ -71,7 +71,7 @@ def calculate_potential_coeffs_left(V0: float,
     # fourier coefficients temp array
     n: NDArray[np.int64] = np.arange(1,num_fs+1)
     
-    alpha: NDArray[np.float64] = n*np.pi/hw_arra # 1xn
+    alpha: NDArray[np.float64] = (n*np.pi/hw_arra).astype(dtype=np.float64) # 1xn
     m: NDArray[np.float64] = (g_left[1:M]-g_left[0:M-1])/(x_left[1:M]-x_left[0:M-1]) # 1xM-1, slopes of the left PWL
     
     x_left_vec: NDArray[np.float64] = np.reshape(x_left,(-1,1))
@@ -95,7 +95,7 @@ def calculate_potential_coeffs_left(V0: float,
     #####
     vn: NDArray[np.float64] = outer_coeff*(vn1+vn2)
     
-    return vn
+    return vn.astype(dtype=np.float64)
 
 def calculate_potential_left(hw_arra: float,
                         vn: NDArray[np.float64],
