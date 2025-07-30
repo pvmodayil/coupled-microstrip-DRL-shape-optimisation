@@ -54,68 +54,60 @@ def is_convex(g: NDArray[np.float64]) -> bool:
 ######################################################################################
 #                              Potential & Potential Coeffs
 ######################################################################################
-def calculate_potential_coeffs(V0: float,
+def calculate_potential_coeffs_left(V0: float,
                                hw_arra: float,
-                               w_micrstr: float,
-                               w_gap_strps: float,
                                num_fs: int,
                                g_left: NDArray[np.float64], 
-                               x_left: NDArray[np.float64],
-                               g_right: NDArray[np.float64], 
-                               x_right: NDArray[np.float64],) -> tuple[float, NDArray[np.float64]]:
+                               x_left: NDArray[np.float64]) -> NDArray[np.float64]:
     # Dimensionality checks
     if np.size(x_left) != np.size(g_left):
         raise ValueError(f'Dimensions of x-axis vector and g-points vector for left side do not match!\n\
                          size x_left:{np.size(x_left)}, size g_left:{np.size(g_left)}')
-    if np.size(x_right) != np.size(g_right):
-        raise ValueError(f'Dimensions of x-axis vector and g-points vector for left side do not match!\n\
-                         size x_right:{np.size(x_right)}, size g_right:{np.size(g_right)}')
-        
+    
+    # Repeating values
+    ##################
+    M: int = np.size(g_left) # size of the left side
+    
     # fourier coefficients temp array
-    n: NDArray[np.int64] = np.arange(num_fs)
+    n: NDArray[np.int64] = np.arange(1,num_fs+1)
     
-    M: int = np.size(g_left)
-    N: int = np.size(g_right)
+    alpha: NDArray[np.float64] = n*np.pi/hw_arra # 1xn
+    m: NDArray[np.float64] = (g_left[1:M]-g_left[0:M-1])/(x_left[1:M]-x_left[0:M-1]) # 1xM-1, slopes of the left PWL
     
-    # Fourier coefficients
-    ######################
-    a0: float = (1/hw_arra)*(
-        np.sum((g_left[1:M] + g_left[0:M-1])*(x_left[1:M] + x_left[0:M-1]))/2
-        + w_micrstr
-        + np.sum((g_right[1:N] + g_right[0:N-1])*(x_right[1:N] + x_right[0:N-1]))/2
-        )*V0
+    x_left_vec: NDArray[np.float64] = np.reshape(x_left,(-1,1))
     
-    outer_coeff: NDArray = V0*2/(n*np.pi) # 1xn
+    outer_coeff: float = V0*2/hw_arra
     
-    # convert the array to a column vector
-    x_left_vec: NDArray[np.float64] = np.reshape(x_left,(-1,1))  # Mx1
-    x_right_vec: NDArray[np.float64] = np.reshape(x_right, (-1,1)) # Nx1
+    # vn1
+    ######
+    vn1: NDArray[np.float64] = (1/alpha**2)*(
+        np.matmul(m, np.sin(alpha*x_left_vec[1:M]) - np.sin(alpha*x_left_vec[0:M-1]))
+    ) # 1xn x [1xN-1 x N-1xn] = 1xn
     
-    sin_left: NDArray[np.float64] = np.sin((n*np.pi/hw_arra)*x_left_vec[1:M]) - np.sin((n*np.pi/hw_arra)*x_left_vec[0:M-1]) # Mxn
-    fac_left: NDArray[np.float64] = (g_left[1:M]-g_left[0:M-1])/(x_left[1:M]-x_left[0:M-1]) # 1xM
-    an1: NDArray[np.float64] = np.matmul(fac_left,sin_left) # 1xn = 1xM x Mxn
+    # vn2
+    ######
+    vn2: NDArray[np.float64] = (1/alpha)*(
+        np.matmul(g_left[0:M-1], np.cos(alpha*x_left_vec[0:M-1]))
+        - np.matmul(g_left[1:M], np.cos(alpha*x_left_vec[1:M]))
+    ) # 1xn x [1xN-1 x N-1xn] = 1xn
     
-    an2 = np.sin((w_micrstr + w_gap_strps/2)*n*np.pi/hw_arra) - np.sin(w_gap_strps/2*n*np.pi/hw_arra) # 1xn
+    # vn
+    #####
+    vn: NDArray[np.float64] = outer_coeff*(vn1+vn2)
     
-    sin_right: NDArray[np.float64] = np.sin((n*np.pi/hw_arra)*x_right_vec[1:N]) - np.sin((n*np.pi/hw_arra)*x_right_vec[0:N-1]) # Nxn
-    fac_right: NDArray[np.float64] = (g_right[1:N]-g_right[0:N-1])/(x_right[1:N]-x_right[0:N-1]) # 1xN
-    an3: NDArray[np.float64] = np.matmul(fac_right,sin_right) # 1xn = 1xN x Nxn
-    
-    an: NDArray[np.float64] = outer_coeff*(an1+an2+an3) # 1xn
-    
-    return a0, an
+    return vn
 
-def calculate_potential(hw_arra: float,
-                        a0: float,
-                        an: NDArray[np.float64],
+def calculate_potential_left(hw_arra: float,
+                        vn: NDArray[np.float64],
                         x: NDArray[np.float64]) -> NDArray[np.float64]:
-    num_fs: int = np.size(an)
+    num_fs: int = np.size(vn)
     
-    n: NDArray[np.int64] = np.arange(num_fs)[:, np.newaxis] # nx1
-    cos: NDArray[np.float64] = np.cos((np.pi*n/hw_arra)*x) # nxm
-    VF: NDArray[np.float64] = a0 + np.matmul(an,cos) # 1xn x nxm = 1xm
+    n: NDArray[np.int64] = np.arange(1,num_fs+1)[:, np.newaxis] # nx1
+    sin: NDArray[np.float64] = np.sin((np.pi*n/hw_arra)*x) # nxm
+    VF: NDArray[np.float64] = np.matmul(vn,sin) # 1xn x nxm = 1xm
     
     return VF
+
 ######################################################################################
 #                                        ENERGY
 ######################################################################################
