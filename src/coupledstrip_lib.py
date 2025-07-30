@@ -106,7 +106,7 @@ def calculate_potential_left(hw_arra: float,
     sin: NDArray[np.float64] = np.sin((np.pi*n/hw_arra)*x) # nxm
     VF: NDArray[np.float64] = np.matmul(vn,sin) # 1xn x nxm = 1xm
     
-    return VF
+    return VF.astype(dtype=np.float64)
 
 ######################################################################################
 #                                        ENERGY
