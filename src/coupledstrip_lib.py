@@ -101,13 +101,75 @@ def calculate_potential_left(hw_arra: float,
                         vn: NDArray[np.float64],
                         x: NDArray[np.float64]) -> NDArray[np.float64]:
     num_fs: int = np.size(vn)
-    
     n: NDArray[np.int64] = np.arange(1,num_fs+1)[:, np.newaxis] # nx1
-    sin: NDArray[np.float64] = np.sin((np.pi*n/hw_arra)*x) # nxm
+    
+    alpha: NDArray[np.float64] = (n*np.pi/hw_arra).astype(dtype=np.float64) # nx1
+    sin: NDArray[np.float64] = np.sin(alpha*x) # nxm
     VF: NDArray[np.float64] = np.matmul(vn,sin) # 1xn x nxm = 1xm
     
     return VF.astype(dtype=np.float64)
 
+def calculate_potential_coeffs_right(V0: float,
+                               hw_arra: float,
+                               w_micrstr: float,
+                               w_gap_strps: float,
+                               num_fs: int,
+                               g_right: NDArray[np.float64], 
+                               x_right: NDArray[np.float64],) -> NDArray[np.float64]:
+    # Dimensionality check
+    if np.size(x_right) != np.size(g_right):
+        raise ValueError(f'Dimensions of x-axis vector and g-points vector for left side do not match!\n\
+                         size x_right:{np.size(x_right)}, size g_right:{np.size(g_right)}')    
+        
+    # Repeating or constant terms
+    #############################
+    N: float = np.size(g_right)
+    d: float = w_gap_strps/2
+    
+    n: NDArray[np.int64] = np.arange(num_fs) # 1xn
+    
+    beta: NDArray[np.float64] = (((2*n+1)*np.pi)/(2*(hw_arra - d))).astype(dtype=np.float64) # 1xn
+    m_prime: NDArray[np.float64] = (g_right[1:N] - g_right[0:N-1])/(x_right[1:N] - x_right[0:N-1]) # 1xN-1
+    
+    x_right_vec: NDArray[np.float64] = np.reshape(x_right,(-1,1)) # Nx1
+    
+    outer_coeff: float = 2*V0/(hw_arra-d)
+    
+    # vn1
+    ######
+    vn1: NDArray[np.float64] = np.sin(beta*w_micrstr)/beta # 1xn
+    
+    # vn2
+    ######
+    vn2: NDArray[np.float64] = (1/beta)*(
+        np.matmul(g_right[1:N], np.sin(beta*(x_right_vec[1:N] - d)))
+        - np.matmul(g_right[0:N-1], np.sin(beta*(x_right_vec[0:N-1] - d)))
+    ) # 1xn x [1xN-1 x N-1xn] = 1xn
+    
+    # vn3
+    ######
+    vn3: NDArray[np.float64] = (1/beta**2)*(
+        np.matmul(m_prime, np.cos(beta*(x_right_vec[1:N]-d)) - np.cos(beta*(x_right_vec[0:N-1]-d)))
+    ) # 1xn x [1xN-1 x N-1xn] = 1xn
+    
+    # vn
+    ######
+    vn: NDArray[np.float64] = outer_coeff*(vn1+vn2+vn3)
+    
+    return vn.astype(dtype=np.float64)
+
+def calculate_potential_right(hw_arra: float,
+                        w_gap_strps: float,
+                        vn: NDArray[np.float64],
+                        x: NDArray[np.float64]) -> NDArray[np.float64]:
+    num_fs: int = np.size(vn)
+    d: float = w_gap_strps/2
+    n: NDArray[np.int64] = np.arange(num_fs)[:, np.newaxis] # nx1
+    beta: NDArray[np.float64] = (((2*n+1)*np.pi)/(2*(hw_arra - d))).astype(dtype=np.float64) # nx1
+    cos: NDArray[np.float64] = np.cos(beta*(x-d)) # nxm
+    VF: NDArray[np.float64] = np.matmul(vn,cos) # 1xn x nxm = 1xm
+    
+    return VF.astype(np.float64)
 ######################################################################################
 #                                        ENERGY
 ######################################################################################
