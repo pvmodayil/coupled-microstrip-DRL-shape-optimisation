@@ -19,6 +19,7 @@ from gymnasium.spaces import Box
 
 # CSA Lib
 import coupledstrip_lib as csa_lib
+from coupledstrip_lib import CoupledStripArrangement
 
 import logging
 # Set up logging
@@ -35,11 +36,12 @@ class CoupledStripEnv(Env):
     This environment simulates the dynamics of a coupled strip system.
     """
     
-    def __init__(self) -> None:
+    def __init__(self, CSA: CoupledStripArrangement) -> None:
+        
+        # Environment paramaters
+        self.CSA: CoupledStripArrangement = CSA
+        
         # Define action and observation space
-        self.width_micrstr: float = 5e-4 
-        self.space_bw_strps: float = 0.5e-3
-        self.hw_arra: float = 3e-3
         self.action_space: Box = Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32) #type:ignore
         self.observation_space: Box = Box(low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32) #type:ignore
     
@@ -67,7 +69,7 @@ class CoupledStripEnv(Env):
         """
         
         if side == 'left':
-            x_end_left: float = self.space_bw_strps/2
+            x_end_left: float = self.CSA.space_bw_strps/2
             P0: NDArray[np.float64] = np.array([0, 0])
             P10: float = action[0]*x_end_left
             P1: NDArray[np.float64] = np.array([P10, action[1]])
@@ -76,13 +78,13 @@ class CoupledStripEnv(Env):
             P3: NDArray[np.float64] = np.array([x_end_left, 1])
             
         elif side == 'right':
-            x_start_right: float = self.space_bw_strps/2 + self.width_micrstr
+            x_start_right: float = self.CSA.space_bw_strps/2 + self.CSA.width_micrstr
             P0: NDArray[np.float64] = np.array([x_start_right, 1])
-            P10: float = x_start_right + action[0]*(self.hw_arra-x_start_right)
+            P10: float = x_start_right + action[0]*(self.CSA.hw_arra-x_start_right)
             P1: NDArray[np.float64] = np.array([P10, action[1]])
-            P20: float = x_start_right + action[2]*(self.hw_arra-x_start_right)
+            P20: float = x_start_right + action[2]*(self.CSA.hw_arra-x_start_right)
             P2: NDArray[np.float64] = np.array([P20, action[3]])
-            P3: NDArray[np.float64] = np.array([self.hw_arra, 0])
+            P3: NDArray[np.float64] = np.array([self.CSA.hw_arra, 0])
             
         else:
             raise ValueError("Invalid side specified. Use 'left' or 'right'.")
@@ -150,7 +152,11 @@ class CoupledStripEnv(Env):
             np.random.seed(seed)
         
         # Initialize the state
-        initial_state: NDArray[np.float32] = np.zeros(4, dtype=np.float32)
+        initial_state: NDArray[np.float32] = np.array([self.CSA.width_micrstr, 
+                                                       self.CSA.hw_arra, 
+                                                       self.CSA.ht_arra, 
+                                                       self.CSA.ht_subs, 
+                                                       self.CSA.er2]).astype(dtype=np.float32)
         return initial_state, {}
 
     def step(self, action: NDArray) -> tuple[NDArray, float, bool, bool, dict]:
