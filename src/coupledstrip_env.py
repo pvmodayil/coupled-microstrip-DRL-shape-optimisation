@@ -327,6 +327,9 @@ class CoupledStripEnv(Env):
         terminated: bool = False
         truncated: bool = False
         
+        # Take absolute of the action values
+        action = np.abs(action) # Bezier curve expects positive values
+        
         # Get Bezier curves and get reward
         mid_point: int = int(self.action_space.shape[0]/2)
         action_left: NDArray = action[:mid_point]
