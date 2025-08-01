@@ -196,6 +196,20 @@ class CoupledStripEnv(Env):
         return x_coords,y_coords,control_points
     
     def _logistic_sigmoid(self, x: float) -> float:
+        """
+        Function to calculate the logistic sigmoid function value.
+        Used to bound the rewards.
+
+        Parameters
+        ----------
+        x : float
+            raw rewward value
+
+        Returns
+        -------
+        float
+            bounded scaled reward value
+        """
         # For the sigmoid function the steep increase starts around x=-2 (check graphs of sigmoid)
         # Since x is always positive in this case, do a left shift to get that steep increase
         x_shifted: float = x - 2 
@@ -209,7 +223,27 @@ class CoupledStripEnv(Env):
             x_left: NDArray[np.float64],
             g_right: NDArray[np.float64], 
             x_right: NDArray[np.float64]) -> float:
-        
+        """
+        Function to calculate the reward for the given action
+
+        Parameters
+        ----------
+        action : NDArray[np.float64]
+            action array from the RL agent
+        g_left : NDArray[np.float64]
+            PWL g points for 0 <= x <= space_bw_strps/2
+        x_left : NDArray[np.float64]
+            x coordinates for g_left
+        g_right : NDArray[np.float64]
+            PWL g points for space_bw_strps/2 + width_micrstr <= x <= hw_arra
+        x_right : NDArray[np.float64]
+            x coordinates for g_right
+
+        Returns
+        -------
+        float
+            reward value
+        """
         # Initialise
         MAX_PENALITY: float = -1
         MAX_CONVEXITY_PENALITY: float = -0.5
