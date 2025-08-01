@@ -42,8 +42,35 @@ class CoupledStripEnv(Env):
         self.CSA: CoupledStripArrangement = CSA
         
         # Define action and observation space
-        self.action_space: Box = Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32) #type:ignore
-        self.observation_space: Box = Box(low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32) #type:ignore
+        """
+        Action Space
+        -----------------------------------------
+        The action space is an array of size four where two pairs of values specify the (x,y) coordinates of the two control points. 
+            
+        | Action          | Min               | Max                | Size       |   
+        |-----------------|-------------------|--------------------|------------|
+        | control fcator  | -bound            | bound              | ndarray(4,)|
+        
+        """
+        bound: float = 0.4
+        self.action_space: Box = Box(low=-bound, high=bound, shape=(8,), dtype=np.float32) #type:ignore
+        """
+        Observation Space
+        -----------------------------------------
+        The observation space includes width_micrstr, hw_arra, ht_arra, ht_subs and er2
+        
+        The observation space is an `ndarray` with shape `(5,)` where the elements correspond to the following:
+        
+        | Num          | Observation           | Min               | Max                |
+        |--------------|-----------------------|-------------------|--------------------|
+        | 0            | width_micrstr         | 0                 | Inf                |
+        | 1            | space_bw_strps        | 0                 | Inf                |
+        | 2            | hw_arra               | 0                 | Inf                |
+        | 3            | ht_arra               | 0                 | Inf                |
+        | 4            | ht_subs               | 0                 | Inf                |
+        | 5            | er2                   | 0                 | Inf                |
+        """
+        self.observation_space: Box = Box(low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32) #type:ignore
     
     def _get_control_points(self,action:NDArray[np.float64],
                      side: Literal["left","right"]) -> NDArray[np.float64]:
@@ -152,7 +179,8 @@ class CoupledStripEnv(Env):
             np.random.seed(seed)
         
         # Initialize the state
-        initial_state: NDArray[np.float32] = np.array([self.CSA.width_micrstr, 
+        initial_state: NDArray[np.float32] = np.array([self.CSA.width_micrstr,
+                                                       self.CSA.space_bw_strps,
                                                        self.CSA.hw_arra, 
                                                        self.CSA.ht_arra, 
                                                        self.CSA.ht_subs, 
