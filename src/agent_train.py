@@ -10,6 +10,7 @@
 #####################################################################################
 import os
 import numpy as np
+from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 import torch
 
@@ -42,6 +43,17 @@ def create_directories(**kwargs) -> None:
         else:
             print(f"Directory already exists: {dir_name}")
 
+def predict(env: CoupledStripEnv, model: SAC) -> NDArray[np.float64]:
+    obs_space: NDArray[np.float32]
+    info: dict
+    
+    obs_space, info = env.reset()
+    action: NDArray
+    _states: tuple | None
+    
+    action, _states = model.predict(obs_space)
+    
+    return np.abs(action)
 # main training loop function
 ############################# 
 def train(env: CoupledStripEnv, model_dir: str, log_dir: str, device: torch.device) -> None:
