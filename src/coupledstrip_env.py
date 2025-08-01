@@ -203,7 +203,7 @@ class CoupledStripEnv(Env):
         
         return sigmoid_val
     
-    def reward(self,
+    def get_reward(self,
             action: NDArray[np.float64],
             g_left: NDArray[np.float64], 
             x_left: NDArray[np.float64],
@@ -286,22 +286,36 @@ class CoupledStripEnv(Env):
         Returns:
             tuple: Next observation, reward, done flag, truncated flag, and an info dictionary.
         """
-        terminated: bool = False
-        truncated: bool = False
-        obs_space: NDArray = np.zeros(4, dtype=np.float32)
-        reward: float = 0.0
-        
         # Validate action
         if not self.action_space.contains(action):
             raise ValueError("Action is out of bounds.")
         
-        # Simulate the environment dynamics
-        obs_space: NDArray = np.random.rand(4).astype(np.float32)
+        terminated: bool = False
+        truncated: bool = False
         
-        return obs_space, reward, terminated, truncated, {}
-    
-def main() -> None:
-    pass
-
-if __name__ == "__main__":
-    main()
+        # Get Bezier curves and get reward
+        mid_point: int = int(self.action_space.shape[0]/2)
+        action_left: NDArray = action[:mid_point]
+        action_right: NDArray = action[mid_point:]
+        x_left: NDArray
+        g_left: NDArray
+        _control: NDArray
+        x_left,g_left,_control = self.get_bezier_curve(action=action_left,side='left')
+        x_right: NDArray
+        g_right: NDArray
+        x_right,g_right,_control = self.get_bezier_curve(action=action_right,side='right')
+        reward: float = self.get_reward(action=action,
+                                        g_left=g_left,
+                                        x_left=x_left,
+                                        g_right=g_right,
+                                        x_right=x_right)
+        
+        
+        
+        # Simulate the environment dynamics, Degenerate DRL (single step-no intermediate states)
+        obs_space: NDArray
+        info: dict
+        obs_space, info = self.reset()
+        terminated = True
+        
+        return obs_space, reward, terminated, truncated, info
