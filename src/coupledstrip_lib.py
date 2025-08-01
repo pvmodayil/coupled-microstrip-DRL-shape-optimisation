@@ -36,16 +36,16 @@ class CoupledStripArrangement:
 #                            Necessary Conditions Check
 ######################################################################################
 @njit
-def is_monotone(g: NDArray[np.float64], decreasing: bool) -> bool:
+def is_monotone(g: NDArray[np.float64], type: Literal["decreasing","increasing"]) -> bool:
     """
-    Function to check for monotonicity, decreasing flag determines whether monotone decreasing or increasing
+    Function to check for monotonicity, type  determines whether monotone decreasing or increasing
 
     Parameters
     ----------
     g : NDArray[np.float64]
         g points   for Piece Wise Linear function approximation
-    decreasing : bool
-        flag to check for increasing or decreasing
+    type : Literal["decreasing","increasing"]
+        flag to check for increasing or type
 
     Returns
     -------
@@ -53,9 +53,16 @@ def is_monotone(g: NDArray[np.float64], decreasing: bool) -> bool:
         returns True if monotone
     """
     dx: NDArray[np.float64] = np.diff(g)
-    if decreasing:
+    if type == "decreasing":
         return bool(np.all(dx < 0))
     return bool(np.all(dx > 0)) 
+
+@njit
+def degree_monotonicity(g: NDArray[np.float64], type: Literal["decreasing","increasing"]) -> int:
+    dx: NDArray[np.float64] = np.diff(g)
+    if type == "decreasing":
+        return int(np.sum(dx < 0))
+    return int(np.sum(dx > 0))
 
 @njit   
 def is_convex(g: NDArray[np.float64]) -> bool:

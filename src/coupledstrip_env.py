@@ -41,6 +41,37 @@ class CoupledStripEnv(Env):
         # Environment paramaters
         self.CSA: CoupledStripArrangement = CSA
         
+        # Calculate the baseline energy for scaling reward
+        action_left: NDArray = np.zeros(4)
+        action_right: NDArray = np.zeros(4)
+        x_left: NDArray
+        g_left: NDArray
+        _control: NDArray
+        x_left,g_left,_control = self.get_bezier_curve(action=action_left,side='left')
+        x_right: NDArray
+        g_right: NDArray
+        _control: NDArray
+        x_right,g_right,_control = self.get_bezier_curve(action=action_right,side='right')
+        
+        vn: NDArray = csa_lib.calculate_potential_coeffs(V0=self.CSA.V0,
+                                                                 hw_arra=self.CSA.hw_arra,
+                                                                 width_micrstr=self.CSA.width_micrstr,
+                                                                 space_bw_strps=self.CSA.space_bw_strps,
+                                                                 num_fs=self.CSA.num_fs,
+                                                                 g_left=g_left,
+                                                                 x_left=x_left,
+                                                                 g_right=g_right,
+                                                                 x_right=x_right)
+        
+        self.energy_baseline: float = csa_lib.calculate_energy(er1=self.CSA.er1,
+                                                    er2=self.CSA.er2,
+                                                    hw_arra=self.CSA.hw_arra,
+                                                    ht_arra=self.CSA.ht_arra,
+                                                    ht_subs=self.CSA.ht_subs,
+                                                    vn=vn)
+        
+        self.minimum_energy: NDArray = np.array([np.inf])
+        
         # Define action and observation space
         """
         Action Space
@@ -54,6 +85,7 @@ class CoupledStripEnv(Env):
         """
         bound: float = 0.4
         self.action_space: Box = Box(low=-bound, high=bound, shape=(8,), dtype=np.float32) #type:ignore
+        self.action_space_bound: float = bound
         """
         Observation Space
         -----------------------------------------
@@ -163,6 +195,41 @@ class CoupledStripEnv(Env):
         
         return x_coords,y_coords,control_points
     
+    def reward(self,
+            action: NDArray[np.float64],
+            g_left: NDArray[np.float64], 
+            x_left: NDArray[np.float64],
+            g_right: NDArray[np.float64], 
+            x_right: NDArray[np.float64]) -> float:
+        
+        # Initialise
+        reward: float = 0
+        
+        # To promote some change
+        if np.all(action == 0):
+            # conditon where no chnage happens
+            return -1
+        # Check for monotonicity
+        if csa_lib.is_monotone(g=g_left,type="increasing") and csa_lib.is_monotone(g=g_right,type="decreasing"):
+            if csa_lib.is_convex(g=g_left) and csa_lib.is_convex(g=g_right):
+                vn: NDArray = csa_lib.calculate_potential_coeffs(V0=self.CSA.V0,
+                                                                 hw_arra=self.CSA.hw_arra,
+                                                                 width_micrstr=self.CSA.width_micrstr,
+                                                                 space_bw_strps=self.CSA.space_bw_strps,
+                                                                 num_fs=self.CSA.num_fs,
+                                                                 g_left=g_left,
+                                                                 x_left=x_left,
+                                                                 g_right=g_right,
+                                                                 x_right=x_right)
+                energy: float = csa_lib.calculate_energy(er1=self.CSA.er1,
+                                                         er2=self.CSA.er2,
+                                                         hw_arra=self.CSA.hw_arra,
+                                                         ht_arra=self.CSA.ht_arra,
+                                                         ht_subs=self.CSA.ht_subs,
+                                                         vn=vn)
+                reward = ((1/energy)/(1/self.energy_baseline))
+                
+        return reward
     
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[NDArray, dict]:
         """
