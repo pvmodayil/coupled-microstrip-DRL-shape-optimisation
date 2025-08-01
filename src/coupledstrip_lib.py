@@ -10,6 +10,7 @@
 #####################################################################################
 from dataclasses import dataclass
 
+from numba import njit
 import numpy as np
 from numpy.typing import NDArray
 
@@ -191,7 +192,80 @@ def calculate_energy(er1: float, er2: float, hw_arra: float, ht_arra: float, ht_
 ######################################################################################
 #                        Capacitance, Impedance, Epsilon Effective
 ######################################################################################
+@njit
+def calculateCapacitance(V0: float, W:float) -> float:
+    """
+    Function to calaculate capacitance
+    
+    Input
+    -----------
+    W: energy
+        float
+    
+    Output
+    -----------
+    C = capacitance  
+        float      
+    """
+    
+    C = (2*W)/(V0**2)
+    
+    return C
 
+@njit
+def calculateImpedanceCaseD(cD: float, cL: float) -> float:
+    """
+    calculates capacitance of case D
+    Parameters
+    ----------
+    capacitanceD : float
+        case D capacitance
+    capacitanceL : float
+        case L capacitance
+
+    Returns
+    -------
+    zD: float
+        impedance case D
+    """
+    c0 = 299792458 #m/s speed of light in vaccuum
+    return 1/(c0*(cD*cL)**0.5)
+
+@njit
+def calculateImpedanceCaseL(cL: float) -> float:
+    """
+    calculates capacitance of case L
+    Parameters
+    ----------
+    capacitanceL : float
+        case L capacitance
+
+    Returns
+    -------
+    zL: float
+        impedance case L 
+    """
+    c0 = 299792458 #m/s speed of light in vaccuum
+    return 1/(c0*cL)
+
+@njit
+def calculateEpsilonEffective(cD: float, cL: float) -> float:
+    """
+    calculates effective dielectric constant
+
+    Parameters
+    ----------
+    cD : float
+        case D capacitance
+    cL : float
+        case L capacitance
+
+    Returns
+    -------
+    eps_eff: float
+        effective dielectric constant
+    """
+    return cD/cL
 ######################################################################################
 #                           Surface Charge Density
 ######################################################################################
