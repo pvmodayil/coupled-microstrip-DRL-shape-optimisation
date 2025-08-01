@@ -173,7 +173,7 @@ class CoupledStripEnv(Env):
             x-coordinates, y-coordinates, and the control points of the Bezier curve.
         """
         
-        num_pts: int = 100
+        num_pts: int = self.CSA.num_pts
         t_vals: NDArray[np.float64] = (np.linspace(0,1,num_pts)).astype(dtype=np.float64) # 1Xnum_pts
         t: NDArray[np.float64] = t_vals[:, np.newaxis] # num_ptsX1
 
@@ -194,6 +194,14 @@ class CoupledStripEnv(Env):
         y_coords: NDArray[np.float64] = curve_points[:, 1]
         
         return x_coords,y_coords,control_points
+    
+    def _logistic_sigmoid(self, x: float) -> float:
+        # For the sigmoid function the steep increase starts around x=-2 (check graphs of sigmoid)
+        # Since x is always positive in this case, do a left shift to get that steep increase
+        x_shifted: float = x - 2 
+        sigmoid_val: float = 1/(1+np.exp(-x_shifted))
+        
+        return sigmoid_val
     
     def reward(self,
             action: NDArray[np.float64],
@@ -227,7 +235,17 @@ class CoupledStripEnv(Env):
                                                          ht_arra=self.CSA.ht_arra,
                                                          ht_subs=self.CSA.ht_subs,
                                                          vn=vn)
-                reward = ((1/energy)/(1/self.energy_baseline))
+                # Squashing to the bounds of [0,1]
+                reward = self._logistic_sigmoid(self.energy_baseline/energy) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
+            
+            else:
+                # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
+                reward = -0.5 + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
+                            + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)/4
+        else:
+            # Max val = -1 + 2/4 = -0.5
+            reward = -1 + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
+                           + csa_lib.degree_monotonicity(g=g_right,type='decreasing')/self.CSA.num_pts)/4
                 
         return reward
     
