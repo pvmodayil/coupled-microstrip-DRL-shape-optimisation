@@ -213,7 +213,8 @@ class CoupledStripEnv(Env):
         # Initialise
         MAX_PENALITY: float = -1
         MAX_CONVEXITY_PENALITY: float = -0.5
-        
+        # each check will have max value 1 so total max will be 2, need it to be constarined to 0.5 so that each check contributes +0.5 from MAX_PENALITY
+        SCALING_FACTOR: float = 0.25 
         reward: float
         
         # To promote some change
@@ -244,11 +245,11 @@ class CoupledStripEnv(Env):
             else:
                 # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
                 reward = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
-                            + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)/4
+                            + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR
         else:
             # Max val = -1 + 2/4 = -0.5
             reward = MAX_PENALITY + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
-                           + csa_lib.degree_monotonicity(g=g_right,type='decreasing')/self.CSA.num_pts)/4
+                           + csa_lib.degree_monotonicity(g=g_right,type='decreasing')/self.CSA.num_pts)*SCALING_FACTOR
                 
         return reward
     
