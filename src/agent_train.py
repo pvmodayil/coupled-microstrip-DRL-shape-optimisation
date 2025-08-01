@@ -78,7 +78,7 @@ def predict(env: CoupledStripEnv, model: SAC | BaseAlgorithm) -> NDArray[np.floa
 # main training loop function
 ############################# 
 class IntermediatePredictionCallback(BaseCallback):
-    def __init__(self, env: CoupledStripEnv, intermediate_pred_interval: int, env_type: str, intermediate_pred_dir: str):
+    def __init__(self, env: CoupledStripEnv, intermediate_pred_interval: int, env_type: str, intermediate_pred_dir: str) -> None:
         super(IntermediatePredictionCallback, self).__init__()
         self.env: CoupledStripEnv = env
         self.intermediate_pred_interval: int = intermediate_pred_interval
