@@ -211,12 +211,15 @@ class CoupledStripEnv(Env):
             x_right: NDArray[np.float64]) -> float:
         
         # Initialise
-        reward: float = 0
+        MAX_PENALITY: float = -1
+        MAX_CONVEXITY_PENALITY: float = -0.5
+        
+        reward: float
         
         # To promote some change
         if np.all(action == 0):
             # conditon where no chnage happens
-            return -1
+            return MAX_PENALITY
         # Check for monotonicity
         if csa_lib.is_monotone(g=g_left,type="increasing") and csa_lib.is_monotone(g=g_right,type="decreasing"):
             if csa_lib.is_convex(g=g_left) and csa_lib.is_convex(g=g_right):
@@ -240,11 +243,11 @@ class CoupledStripEnv(Env):
             
             else:
                 # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
-                reward = -0.5 + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
+                reward = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
                             + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)/4
         else:
             # Max val = -1 + 2/4 = -0.5
-            reward = -1 + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
+            reward = MAX_PENALITY + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
                            + csa_lib.degree_monotonicity(g=g_right,type='decreasing')/self.CSA.num_pts)/4
                 
         return reward
