@@ -9,6 +9,7 @@
 #                                     Imports
 #####################################################################################
 from dataclasses import dataclass
+from typing import Literal
 
 from numba import njit
 import numpy as np
@@ -36,6 +37,21 @@ class CoupledStripArrangement:
 ######################################################################################
 @njit
 def is_monotone(g: NDArray[np.float64], decreasing: bool) -> bool:
+    """
+    Function to check for monotonicity, decreasing flag determines whether monotone decreasing or increasing
+
+    Parameters
+    ----------
+    g : NDArray[np.float64]
+        g points   for Piece Wise Linear function approximation
+    decreasing : bool
+        flag to check for increasing or decreasing
+
+    Returns
+    -------
+    bool
+        returns True if monotone
+    """
     dx: NDArray[np.float64] = np.diff(g)
     if decreasing:
         return bool(np.all(dx < 0))
@@ -43,6 +59,25 @@ def is_monotone(g: NDArray[np.float64], decreasing: bool) -> bool:
 
 @njit   
 def is_convex(g: NDArray[np.float64]) -> bool:
+    """
+    Function to check for convexity of the Piece Wise Linear function
+
+
+    Parameters
+    ----------
+    g : NDArray[np.float64]
+        g points   for Piece Wise Linear function approximation
+
+    Returns
+    -------
+    bool
+        returns True if convex
+
+    Raises
+    ------
+    ValueError
+        raise error  for insufficient number of g points
+    """
     # Check if the array has at least 3 elements
     if len(g) < 3:
         raise ValueError("The array should have at least 3 elements to perform convexity check.\nPlease use more g-points")
@@ -66,6 +101,42 @@ def calculate_potential_coeffs(V0: float,
                                x_left: NDArray[np.float64],
                                g_right: NDArray[np.float64], 
                                x_right: NDArray[np.float64]) -> NDArray[np.float64]:
+    """
+    Function to calculate the Fourier potential coefficients for the Fourier series approximation
+
+    Parameters
+    ----------
+    V0 : float
+        potential at the microstrip, used to scale the equations
+    hw_arra : float
+        half width of the arrangement
+    w_micrstr : float
+        width of the microstrip
+    w_gap_strps : float
+        gap between the microstrip pair
+    num_fs : int
+        number of Fourier coefficients
+    g_left : NDArray[np.float64]
+        PWL g points for 0 <= x <= w_gap_strps/2
+    x_left : NDArray[np.float64]
+        x coordinates for g_left
+    g_right : NDArray[np.float64]
+        PWL g points for w_gap_strps/2 + w_micrstr <= x <= hw_arra
+    x_right : NDArray[np.float64]
+        x coordinates for g_right
+
+    Returns
+    -------
+    NDArray[np.float64]
+        Fourier coefficients
+
+    Raises
+    ------
+    ValueError
+        raises error if the dimensions of the left coordinates don't match
+    ValueError
+        raises error if the dimensions of the right coordinates don't match
+    """
     # Dimensionality check
     ######################
     if np.size(x_left) != np.size(g_left):
@@ -132,6 +203,23 @@ def calculate_potential_coeffs(V0: float,
 def calculate_potential(hw_arra: float,
                         vn: NDArray[np.float64],
                         x: NDArray[np.float64]) -> NDArray[np.float64]:
+    """
+    Function to calculate the potential with Fourier reconstruction
+
+    Parameters
+    ----------
+    hw_arra : float
+        half width of the arrangement
+    vn : NDArray[np.float64]
+        Fourier coefficients
+    x : NDArray[np.float64]
+        x axis coordinates
+
+    Returns
+    -------
+    NDArray[np.float64]
+        Potential Fourier reconstruction for the given x
+    """
     num_fs: int = np.size(vn)
     
     n: NDArray[np.int64] = np.arange(1,num_fs+1)[:, np.newaxis] # nx1
@@ -148,6 +236,19 @@ def calculate_potential(hw_arra: float,
 # cosh = (e^x + e^(-x))/2 => ln(cosh(x)) = ln(e^x + e^(-x)) - ln(2)
 @njit
 def logsinh(vector: NDArray[np.float64]) -> NDArray[np.float64]:
+    """
+    Function to calculate the logsinh with numerical stability via thresholding
+
+    Parameters
+    ----------
+    vector : NDArray[np.float64]
+        theta in sinh(theta)
+
+    Returns
+    -------
+    NDArray[np.float64]
+        log(sinh)
+    """
     absolute_vector: NDArray[np.float64] = np.abs(vector)
 
     logsinh_result: NDArray[np.float64] = np.where(absolute_vector > 33.0,
@@ -157,6 +258,19 @@ def logsinh(vector: NDArray[np.float64]) -> NDArray[np.float64]:
 
 @njit
 def logcosh(vector: NDArray[np.float64]) -> NDArray[np.float64]:
+    """
+    Function to calculate the logcosh with numerical stability via thresholding
+
+    Parameters
+    ----------
+    vector : NDArray[np.float64]
+        theta in cosh(theta)
+
+    Returns
+    -------
+    NDArray[np.float64]
+        log(cosh)
+    """
     absolute_vector: NDArray[np.float64] = np.abs(vector)
 
     logcosh_result: NDArray[np.float64] = np.where(absolute_vector > 33.0,
@@ -166,6 +280,29 @@ def logcosh(vector: NDArray[np.float64]) -> NDArray[np.float64]:
 
 @njit
 def calculate_energy(er1: float, er2: float, hw_arra: float, ht_arra: float, ht_subs: float, vn: np.ndarray) -> float:
+    """
+    Function to calculate the energy of coupled strip system odd mode
+
+    Parameters
+    ----------
+    er1 : float
+        relative permitivity of medium 1
+    er2 : float
+        relative permitivity of medium 2
+    hw_arra : float
+        half width of the arrangement
+    ht_arra : float
+        height of the arrangement
+    ht_subs : float
+        height of the substrate
+    vn : np.ndarray
+        Fourier coefficients
+
+    Returns
+    -------
+    float
+        energy of the system
+    """
     # Constant terms
     ################
     e0: float = 8.854E-12
@@ -202,17 +339,19 @@ def calculate_energy(er1: float, er2: float, hw_arra: float, ht_arra: float, ht_
 @njit
 def calculate_capacitance(V0: float, W:float) -> float:
     """
-    Function to calaculate capacitance
-    
-    Input
-    -----------
-    W: energy
-        float
-    
-    Output
-    -----------
-    C = capacitance  
-        float      
+    Fucntion to calculate capacitance of the system
+
+    Parameters
+    ----------
+    V0 : float
+        potential at the microstrip
+    W : float
+        energy of the system
+
+    Returns
+    -------
+    float
+        capacitance of the system
     """
     
     C: float = (2*W)/(V0**2)
@@ -220,45 +359,37 @@ def calculate_capacitance(V0: float, W:float) -> float:
     return C
 
 @njit
-def calculate_impedanceCaseD(cD: float, cL: float) -> float:
+def calculate_impedance(cD: float = 1.0, cL: float = 1.0, env: Literal["caseD", "caseL"] = "caseD") -> float:
     """
-    calculates capacitance of case D
+    Function to calculate the impedance of the system based on the environment case
+
     Parameters
     ----------
-    capacitanceD : float
-        case D capacitance
-    capacitanceL : float
-        case L capacitance
+    cD : float
+        capacitance of the caseD system, by default 1.0 (arbitrary no significance)
+    cL : float
+        capacitance of the caseL system, by default 1.0 (arbitrary no significance)
+    env : Literal["caseD", "caseL"]
+        case of the environment (caseD/caseL), by default "caseD"
 
     Returns
     -------
-    zD: float
-        impedance case D
+    float
+        _description_
     """
     c0 = 299792458 #m/s speed of light in vaccuum
-    return 1/(c0*(cD*cL)**0.5)
-
-@njit
-def calculate_impedanceCaseL(cL: float) -> float:
-    """
-    calculates capacitance of case L
-    Parameters
-    ----------
-    capacitanceL : float
-        case L capacitance
-
-    Returns
-    -------
-    zL: float
-        impedance case L 
-    """
-    c0 = 299792458 #m/s speed of light in vaccuum
-    return 1/(c0*cL)
+    match env:
+        case "caseD":
+            return 1/(c0*(cD*cL)**0.5)
+        case "caseL":
+            return 1/(c0*cL)
+        case _:
+            return 0.0 # must not happen as there is a default state(just for the type checker to pass)
 
 @njit
 def calculate_epsilonEff(cD: float, cL: float) -> float:
     """
-    calculates effective dielectric constant
+    Function to calculate effective dielectric constant
 
     Parameters
     ----------
