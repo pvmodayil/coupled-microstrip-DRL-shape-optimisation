@@ -8,7 +8,7 @@
 #####################################################################################
 #                                     Imports
 #####################################################################################
-from typing import Optional
+from typing import Optional, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -16,6 +16,9 @@ from numpy.typing import NDArray
 # import gym
 from gymnasium import Env
 from gymnasium.spaces import Box
+
+# CSA Lib
+import coupledstrip_lib as csa_lib
 
 import logging
 # Set up logging
@@ -35,13 +38,13 @@ class CoupledStripEnv(Env):
     def __init__(self) -> None:
         # Define action and observation space
         self.width_micrstr: float = 5e-4 
-        self.space_bw_micrstr: float = 0.5e-3
+        self.space_bw_strps: float = 0.5e-3
         self.hw_arra: float = 3e-3
         self.action_space: Box = Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32) #type:ignore
         self.observation_space: Box = Box(low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32) #type:ignore
     
     def _get_control_points(self,action:NDArray[np.float64],
-                     side: str) -> NDArray[np.float64]:
+                     side: Literal["left","right"]) -> NDArray[np.float64]:
         """
         _get_control_points
         
@@ -54,7 +57,7 @@ class CoupledStripEnv(Env):
         action : NDArray[np.float64]
             Action array containing parameters for the Bézier curve.
             [x-axis scale doe P1, y-coordiate of P1, x-axis scale for P2, y-coordinate of P2]
-        side : str
+        side : Literal["left","right"]
             The side of the microstructure ('left' or 'right').
 
         Returns
@@ -64,7 +67,7 @@ class CoupledStripEnv(Env):
         """
         
         if side == 'left':
-            x_end_left: float = self.space_bw_micrstr/2
+            x_end_left: float = self.space_bw_strps/2
             P0: NDArray[np.float64] = np.array([0, 0])
             P10: float = action[0]*x_end_left
             P1: NDArray[np.float64] = np.array([P10, action[1]])
@@ -73,7 +76,7 @@ class CoupledStripEnv(Env):
             P3: NDArray[np.float64] = np.array([x_end_left, 1])
             
         elif side == 'right':
-            x_start_right: float = self.space_bw_micrstr/2 + self.width_micrstr
+            x_start_right: float = self.space_bw_strps/2 + self.width_micrstr
             P0: NDArray[np.float64] = np.array([x_start_right, 1])
             P10: float = x_start_right + action[0]*(self.hw_arra-x_start_right)
             P1: NDArray[np.float64] = np.array([P10, action[1]])
@@ -87,7 +90,7 @@ class CoupledStripEnv(Env):
         return np.array([P0, P1, P2, P3])  # Return control points as a numpy array
 
     def get_bezier_curve(self, action: NDArray[np.float64], 
-                    side: str) -> tuple[NDArray[np.float64],NDArray[np.float64],NDArray[np.float64]]:
+                    side: Literal["left","right"]) -> tuple[NDArray[np.float64],NDArray[np.float64],NDArray[np.float64]]:
         """
         get_bezier_curve 
         
@@ -100,7 +103,7 @@ class CoupledStripEnv(Env):
         ----------
         action : NDArray[np.float64]
             action array given by agent
-        side : str
+        side : Literal["left","right"]
             The side of the microstructure ('left' or 'right').
 
         Returns
@@ -110,7 +113,7 @@ class CoupledStripEnv(Env):
         """
         
         num_pts: int = 100
-        t_vals: NDArray[np.float64] = np.linspace(0,1,num_pts) # 1Xnum_pts
+        t_vals: NDArray[np.float64] = (np.linspace(0,1,num_pts)).astype(dtype=np.float64) # 1Xnum_pts
         t: NDArray[np.float64] = t_vals[:, np.newaxis] # num_ptsX1
 
         # stack the control points to do matrix multiplication

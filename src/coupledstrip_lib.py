@@ -24,8 +24,8 @@ class CoupledStripArrangement:
     hw_arra: float # half width of the arrangement, parameter a
     ht_arra: float # height of the arrangement, parameter b
     ht_subs: float # height of the substrate, parameter h
-    w_gap_strps: float # gap between the two microstrips, parameter s
-    w_micrstr: float # width of the microstrip, parameter w
+    space_bw_strps: float # gap between the two microstrips, parameter s
+    width_micrstr: float # width of the microstrip, parameter w
     ht_micrstr: float # height of the microstripm, parameter t
     er1: float # dielectric constatnt for medium 1
     er2: float # dielctric constant for medium 2
@@ -94,8 +94,8 @@ def is_convex(g: NDArray[np.float64]) -> bool:
 @njit
 def calculate_potential_coeffs(V0: float,
                                hw_arra: float,
-                               w_micrstr: float,
-                               w_gap_strps: float,
+                               width_micrstr: float,
+                               space_bw_strps: float,
                                num_fs: int,
                                g_left: NDArray[np.float64], 
                                x_left: NDArray[np.float64],
@@ -110,18 +110,18 @@ def calculate_potential_coeffs(V0: float,
         potential at the microstrip, used to scale the equations
     hw_arra : float
         half width of the arrangement
-    w_micrstr : float
+    width_micrstr : float
         width of the microstrip
-    w_gap_strps : float
+    space_bw_strps : float
         gap between the microstrip pair
     num_fs : int
         number of Fourier coefficients
     g_left : NDArray[np.float64]
-        PWL g points for 0 <= x <= w_gap_strps/2
+        PWL g points for 0 <= x <= space_bw_strps/2
     x_left : NDArray[np.float64]
         x coordinates for g_left
     g_right : NDArray[np.float64]
-        PWL g points for w_gap_strps/2 + w_micrstr <= x <= hw_arra
+        PWL g points for space_bw_strps/2 + width_micrstr <= x <= hw_arra
     x_right : NDArray[np.float64]
         x coordinates for g_right
 
@@ -150,7 +150,7 @@ def calculate_potential_coeffs(V0: float,
     #############################
     M: float = np.size(g_left)
     N: float = np.size(g_right)
-    d: float = w_gap_strps/2
+    d: float = space_bw_strps/2
     
     n: NDArray[np.int64] = np.arange(1,num_fs+1) # 1xn
     
@@ -178,7 +178,7 @@ def calculate_potential_coeffs(V0: float,
     
     # vn3
     ######
-    vn3: NDArray[np.float64] = (1/alpha)*(np.cos(alpha*d) - np.cos(alpha*(d+w_micrstr)))
+    vn3: NDArray[np.float64] = (1/alpha)*(np.cos(alpha*d) - np.cos(alpha*(d+width_micrstr)))
     
     # vn4
     ######
