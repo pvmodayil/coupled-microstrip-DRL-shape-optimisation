@@ -138,7 +138,24 @@ def calculate_potential(hw_arra: float,
 ######################################################################################
 #                                        ENERGY
 ######################################################################################
+# define logarithmic implementations for cosh and sinh to improve numerical stability
+# sinh = (e^x - e^(-x))/2 => ln(sinh(x)) = ln(e^x - e^(-x)) - ln(2)
+# cosh = (e^x + e^(-x))/2 => ln(cosh(x)) = ln(e^x + e^(-x)) - ln(2)
+def logsinh(vector: NDArray[np.float64]) -> NDArray[np.float64]:
+    absolute_vector: NDArray[np.float64] = np.abs(vector)
 
+    logsinh_result: NDArray[np.float64] = np.where(absolute_vector > 33.0,
+                                                   absolute_vector - np.log(2),
+                                                   np.log(np.exp(vector) - np.exp(-vector)) - np.log(2))
+    return logsinh_result
+
+def logcosh(vector: NDArray[np.float64]) -> NDArray[np.float64]:
+    absolute_vector: NDArray[np.float64] = np.abs(vector)
+
+    logcosh_result: NDArray[np.float64] = np.where(absolute_vector > 33.0,
+                                                   absolute_vector - np.log(2),
+                                                   np.log(np.exp(vector) + np.exp(-vector)) - np.log(2))
+    return logcosh_result
 ######################################################################################
 #                        Capacitance, Impedance, Epsilon Effective
 ######################################################################################
