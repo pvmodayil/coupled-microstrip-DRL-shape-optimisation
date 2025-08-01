@@ -193,7 +193,7 @@ def calculate_energy(er1: float, er2: float, hw_arra: float, ht_arra: float, ht_
 #                        Capacitance, Impedance, Epsilon Effective
 ######################################################################################
 @njit
-def calculateCapacitance(V0: float, W:float) -> float:
+def calculate_capacitance(V0: float, W:float) -> float:
     """
     Function to calaculate capacitance
     
@@ -208,12 +208,12 @@ def calculateCapacitance(V0: float, W:float) -> float:
         float      
     """
     
-    C = (2*W)/(V0**2)
+    C: float = (2*W)/(V0**2)
     
     return C
 
 @njit
-def calculateImpedanceCaseD(cD: float, cL: float) -> float:
+def calculate_impedanceCaseD(cD: float, cL: float) -> float:
     """
     calculates capacitance of case D
     Parameters
@@ -232,7 +232,7 @@ def calculateImpedanceCaseD(cD: float, cL: float) -> float:
     return 1/(c0*(cD*cL)**0.5)
 
 @njit
-def calculateImpedanceCaseL(cL: float) -> float:
+def calculate_impedanceCaseL(cL: float) -> float:
     """
     calculates capacitance of case L
     Parameters
@@ -249,7 +249,7 @@ def calculateImpedanceCaseL(cL: float) -> float:
     return 1/(c0*cL)
 
 @njit
-def calculateEpsilonEffective(cD: float, cL: float) -> float:
+def calculate_epsilonEff(cD: float, cL: float) -> float:
     """
     calculates effective dielectric constant
 
