@@ -44,6 +44,21 @@ def create_directories(**kwargs) -> None:
             print(f"Directory already exists: {dir_name}")
 
 def predict(env: CoupledStripEnv, model: SAC) -> NDArray[np.float64]:
+    """
+    Function to predict and take absoulte of the action
+
+    Parameters
+    ----------
+    env : CoupledStripEnv
+        environment
+    model : SAC
+        RL model
+
+    Returns
+    -------
+    NDArray[np.float64]
+        action array for bezier curve
+    """
     obs_space: NDArray[np.float32]
     info: dict
     
