@@ -10,6 +10,7 @@
 #####################################################################################
 from typing import Optional, Literal
 
+from numba import njit
 import numpy as np
 from numpy.typing import NDArray
 
@@ -104,6 +105,7 @@ class CoupledStripEnv(Env):
         """
         self.observation_space: Box = Box(low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32) #type:ignore
     
+    @njit
     def _get_control_points(self,action:NDArray[np.float64],
                      side: Literal["left","right"]) -> NDArray[np.float64]:
         """
@@ -150,6 +152,7 @@ class CoupledStripEnv(Env):
         
         return np.array([P0, P1, P2, P3])  # Return control points as a numpy array
 
+    @njit
     def get_bezier_curve(self, action: NDArray[np.float64], 
                     side: Literal["left","right"]) -> tuple[NDArray[np.float64],NDArray[np.float64],NDArray[np.float64]]:
         """
@@ -194,7 +197,7 @@ class CoupledStripEnv(Env):
         y_coords: NDArray[np.float64] = curve_points[:, 1]
         
         return x_coords,y_coords,control_points
-    
+    @njit
     def _logistic_sigmoid(self, x: float) -> float:
         """
         Function to calculate the logistic sigmoid function value.
@@ -216,7 +219,7 @@ class CoupledStripEnv(Env):
         sigmoid_val: float = 1/(1+np.exp(-x_shifted))
         
         return sigmoid_val
-    
+    @njit
     def calculate_energy(self,
             g_left: NDArray[np.float64], 
             x_left: NDArray[np.float64],
@@ -258,6 +261,7 @@ class CoupledStripEnv(Env):
                                                 vn=vn)
         return energy
     
+    @njit
     def get_reward(self,
             action: NDArray[np.float64],
             g_left: NDArray[np.float64], 
@@ -317,6 +321,7 @@ class CoupledStripEnv(Env):
                 
         return reward
     
+    @njit
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[NDArray, dict]:
         """
         Reset the environment to an initial state.
@@ -340,6 +345,7 @@ class CoupledStripEnv(Env):
                                                        self.CSA.er2]).astype(dtype=np.float32)
         return initial_state, {}
 
+    @njit
     def step(self, action: NDArray) -> tuple[NDArray, float, bool, bool, dict]:
         """
         Execute one time step within the environment.
