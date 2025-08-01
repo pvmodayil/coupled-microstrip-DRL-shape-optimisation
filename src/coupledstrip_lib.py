@@ -34,12 +34,14 @@ class CoupledStripArrangement:
 ######################################################################################
 #                            Necessary Conditions Check
 ######################################################################################
+@njit
 def is_monotone(g: NDArray[np.float64], decreasing: bool) -> bool:
     dx: NDArray[np.float64] = np.diff(g)
     if decreasing:
         return bool(np.all(dx < 0))
     return bool(np.all(dx > 0)) 
-    
+
+@njit   
 def is_convex(g: NDArray[np.float64]) -> bool:
     # Check if the array has at least 3 elements
     if len(g) < 3:
@@ -54,6 +56,7 @@ def is_convex(g: NDArray[np.float64]) -> bool:
 ######################################################################################
 #                              Potential & Potential Coeffs
 ######################################################################################
+@njit
 def calculate_potential_coeffs(V0: float,
                                hw_arra: float,
                                w_micrstr: float,
@@ -125,6 +128,7 @@ def calculate_potential_coeffs(V0: float,
     
     return vn.astype(dtype=np.float64)
 
+@njit
 def calculate_potential(hw_arra: float,
                         vn: NDArray[np.float64],
                         x: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -142,6 +146,7 @@ def calculate_potential(hw_arra: float,
 # define logarithmic implementations for cosh and sinh to improve numerical stability
 # sinh = (e^x - e^(-x))/2 => ln(sinh(x)) = ln(e^x - e^(-x)) - ln(2)
 # cosh = (e^x + e^(-x))/2 => ln(cosh(x)) = ln(e^x + e^(-x)) - ln(2)
+@njit
 def logsinh(vector: NDArray[np.float64]) -> NDArray[np.float64]:
     absolute_vector: NDArray[np.float64] = np.abs(vector)
 
@@ -150,6 +155,7 @@ def logsinh(vector: NDArray[np.float64]) -> NDArray[np.float64]:
                                                    np.log(np.exp(vector) - np.exp(-vector)) - np.log(2))
     return logsinh_result
 
+@njit
 def logcosh(vector: NDArray[np.float64]) -> NDArray[np.float64]:
     absolute_vector: NDArray[np.float64] = np.abs(vector)
 
@@ -158,6 +164,7 @@ def logcosh(vector: NDArray[np.float64]) -> NDArray[np.float64]:
                                                    np.log(np.exp(vector) + np.exp(-vector)) - np.log(2))
     return logcosh_result
 
+@njit
 def calculate_energy(er1: float, er2: float, hw_arra: float, ht_arra: float, ht_subs: float, vn: np.ndarray) -> float:
     # Constant terms
     ################
