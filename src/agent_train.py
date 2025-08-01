@@ -9,9 +9,12 @@
 #                                     Imports
 #####################################################################################
 import os
+import time
+import pandas as pd
+
 import numpy as np
 from numpy.typing import NDArray
-import matplotlib.pyplot as plt
+
 import torch
 
 from .coupledstrip_lib import CoupledStripArrangement
@@ -20,6 +23,7 @@ from ._hyper_parameter import get_hyper_params
 
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.base_class import BaseAlgorithm
 
 
 import logging
@@ -43,7 +47,9 @@ def create_directories(**kwargs) -> None:
         else:
             print(f"Directory already exists: {dir_name}")
 
-def predict(env: CoupledStripEnv, model: SAC) -> NDArray[np.float64]:
+
+
+def predict(env: CoupledStripEnv, model: SAC | BaseAlgorithm) -> NDArray[np.float64]:
     """
     Function to predict and take absoulte of the action
 
@@ -51,7 +57,7 @@ def predict(env: CoupledStripEnv, model: SAC) -> NDArray[np.float64]:
     ----------
     env : CoupledStripEnv
         environment
-    model : SAC
+    model : BaseAlgorithm
         RL model
 
     Returns
@@ -71,19 +77,53 @@ def predict(env: CoupledStripEnv, model: SAC) -> NDArray[np.float64]:
     return np.abs(action)
 # main training loop function
 ############################# 
-def train(env: CoupledStripEnv, model_dir: str, log_dir: str, device: torch.device) -> None:
-    """
-    Train the RL agent using the specified environment.
+class IntermediatePredictionCallback(BaseCallback):
+    def __init__(self, env: CoupledStripEnv, intermediate_pred_interval: int, env_type: str, intermediate_pred_dir: str):
+        super(IntermediatePredictionCallback, self).__init__()
+        self.env: CoupledStripEnv = env
+        self.intermediate_pred_interval: int = intermediate_pred_interval
+        self.env_type: str = env_type
+        self.entropy_coefficient_set = False
+        
+        # Action DF
+        self.intermediate_pred_dir: str = intermediate_pred_dir
+        self.action_df_path: str = os.path.join(self.intermediate_pred_dir,'action_dataframe.csv')
+        self.action_df_rows: list[pd.DataFrame]= []
+        self.column_names: list[str] = ['Timestep'] + [f'A{i}' for i in range(env.action_space.shape[0])]
+        
     
-    Parameters
-    ----------
-    env : CoupledStripEnv
-        The environment in which the agent will be trained.
-    model_dir : str
-        Directory to save the trained model.
-    log_dir : str
-        Directory to save training logs.
-    """
+    def _on_step(self) -> bool:
+        if (self.num_timesteps == 1) or (self.num_timesteps % self.intermediate_pred_interval == 0):
+            # initial prediction
+            logger.info(f"Intermediate prediction at timestep {self.num_timesteps}")
+            action: NDArray = predict(self.env,self.model)
+
+            row: NDArray = np.insert(action,self.num_timesteps,0)
+            row_df = pd.DataFrame([row], columns=self.column_names)
+            self.action_df_rows.append(row_df)
+            
+            result_df: pd.DataFrame = pd.concat(self.action_df_rows, ignore_index=True)
+
+            result_df.to_csv(self.action_df_path,index=False)
+            logger.info("Resuming training......")
+        
+        return True
+    
+def train(env: CoupledStripEnv, 
+          model_dir: str, 
+          log_dir: str, 
+          intermediate_pred_dir: str,
+          device: torch.device,
+          timesteps: int,
+          intermediate_pred_interval: int) -> str:
+    
+    # environment type
+    env_type: str
+    match env.CSA.er1:
+        case 1.0:
+            env_type = "caseL"
+        case _:
+            env_type = "caseD"
     # Get the hyperparameters
     policy_kwargs: dict
     hyperparams: dict
@@ -99,24 +139,76 @@ def train(env: CoupledStripEnv, model_dir: str, log_dir: str, device: torch.devi
                 **hyperparams)  
     
     # Train the agent
-    model.learn(total_timesteps=10000)
+    logger.info("Training started......")
+    start_time: float = time.time()
+    
+    model.learn(total_timesteps=timesteps,
+        log_interval=4,
+        reset_num_timesteps=True, 
+        tb_log_name=env_type,
+        progress_bar=True,
+        callback=IntermediatePredictionCallback(env=env,
+                                                intermediate_pred_interval=intermediate_pred_interval,
+                                                env_type=env_type,
+                                                intermediate_pred_dir=intermediate_pred_dir))
+    
+    training_time: float = (time.time() - start_time)/60 # in minutes
+    logger.info(f"Training ended with total training time: {training_time}......")
     
     # Save the trained model
-    model.save(os.path.join(model_dir, "sac_coupled_strip"))
+    model_save_path: str = os.path.join(model_dir, "sac_coupled_strip")
+    model.save(model_save_path, include="all")
     
-    logger.info("Training completed and model saved.")      
+    logger.info(f"Training completed and model saved at {model_save_path}.")      
+    
+    return model_save_path
 
+def test(model_path: str, env: CoupledStripEnv) -> None:
+    model: SAC = SAC.load(model_path)
+    action: NDArray = predict(env,model)
+    print(action)
+    
 # main called function
 ######################      
-def main() -> None:
+def main(CSA: CoupledStripArrangement) -> None:
     cwd: str = os.getcwd()  
-    model_dir: str = os.path.join(cwd,"training","models")
-    log_dir: str = os.path.join(cwd,"training","logs")
-    image_dir: str = os.path.join(cwd,"training","images")
-    create_directories(mdirRoot = model_dir, ldirRoot = log_dir, idirRoot = image_dir)
+    model_dir: str = os.path.join(cwd,"training","models") # training/models
+    log_dir: str = os.path.join(cwd,"training","logs") # training/logs
+    image_dir: str = os.path.join(cwd,"training","images") # training/images
+    intermediate_pred_dir: str = os.path.join(cwd,"training","intermediate_prediction") # training/intermediate_prediction
+    create_directories(mdirRoot=model_dir, 
+                    ldirRoot=log_dir, 
+                    idirRoot=image_dir, 
+                    inter_pred_dir=intermediate_pred_dir)
     
     logger.info(f"CUDA available: {torch.cuda.is_available()}")
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    # Train the model
+    env: CoupledStripEnv = CoupledStripEnv(CSA=CSA)
+    
+    model_save_path: str = train(env=env, 
+                                 model_dir=model_dir, 
+                                 log_dir=log_dir, 
+                                 intermediate_pred_dir=intermediate_pred_dir,
+                                 device=device,
+                                 timesteps=50000,
+                                 intermediate_pred_interval=5000)
+    
+    test(model_path=model_save_path,env=env)
 
 if __name__ == "__main__":
-    main()
+    CSA: CoupledStripArrangement = CoupledStripArrangement(
+        V0=1., # Potential of the sytem, used to scale the system which is defaulted at V0=1.0
+        hw_arra=1., # half width of the arrangement, parameter a
+        ht_arra=1., # height of the arrangement, parameter b
+        ht_subs=1., # height of the substrate, parameter h
+        space_bw_strps=1., # gap between the two microstrips, parameter s
+        width_micrstr=1., # width of the microstrip, parameter w
+        ht_micrstr=1., # height of the microstripm, parameter t
+        er1=1., # dielectric constatnt for medium 1
+        er2=1., # dielctric constant for medium 2
+        num_fs=2000, # number of fourier series coefficients
+        num_pts=100 # number of points for the piece wise linear approaximation
+    )
+    main(CSA=CSA)
