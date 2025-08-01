@@ -217,6 +217,47 @@ class CoupledStripEnv(Env):
         
         return sigmoid_val
     
+    def calculate_energy(self,
+            g_left: NDArray[np.float64], 
+            x_left: NDArray[np.float64],
+            g_right: NDArray[np.float64], 
+            x_right: NDArray[np.float64]) -> float:
+        """
+        Function to calculate the energy for the given Bezier curve
+
+        Parameters
+        ----------
+        g_left : NDArray[np.float64]
+            PWL g points for 0 <= x <= space_bw_strps/2
+        x_left : NDArray[np.float64]
+            x coordinates for g_left
+        g_right : NDArray[np.float64]
+            PWL g points for space_bw_strps/2 + width_micrstr <= x <= hw_arra
+        x_right : NDArray[np.float64]
+            x coordinates for g_right
+
+        Returns
+        -------
+        float
+            energy
+        """
+        vn: NDArray = csa_lib.calculate_potential_coeffs(V0=self.CSA.V0,
+                                                        hw_arra=self.CSA.hw_arra,
+                                                        width_micrstr=self.CSA.width_micrstr,
+                                                        space_bw_strps=self.CSA.space_bw_strps,
+                                                        num_fs=self.CSA.num_fs,
+                                                        g_left=g_left,
+                                                        x_left=x_left,
+                                                        g_right=g_right,
+                                                        x_right=x_right)
+        energy: float = csa_lib.calculate_energy(er1=self.CSA.er1,
+                                                er2=self.CSA.er2,
+                                                hw_arra=self.CSA.hw_arra,
+                                                ht_arra=self.CSA.ht_arra,
+                                                ht_subs=self.CSA.ht_subs,
+                                                vn=vn)
+        return energy
+    
     def get_reward(self,
             action: NDArray[np.float64],
             g_left: NDArray[np.float64], 
@@ -258,21 +299,10 @@ class CoupledStripEnv(Env):
         # Check for monotonicity
         if csa_lib.is_monotone(g=g_left,type="increasing") and csa_lib.is_monotone(g=g_right,type="decreasing"):
             if csa_lib.is_convex(g=g_left) and csa_lib.is_convex(g=g_right):
-                vn: NDArray = csa_lib.calculate_potential_coeffs(V0=self.CSA.V0,
-                                                                 hw_arra=self.CSA.hw_arra,
-                                                                 width_micrstr=self.CSA.width_micrstr,
-                                                                 space_bw_strps=self.CSA.space_bw_strps,
-                                                                 num_fs=self.CSA.num_fs,
-                                                                 g_left=g_left,
-                                                                 x_left=x_left,
-                                                                 g_right=g_right,
-                                                                 x_right=x_right)
-                energy: float = csa_lib.calculate_energy(er1=self.CSA.er1,
-                                                         er2=self.CSA.er2,
-                                                         hw_arra=self.CSA.hw_arra,
-                                                         ht_arra=self.CSA.ht_arra,
-                                                         ht_subs=self.CSA.ht_subs,
-                                                         vn=vn)
+                energy: float = self.calculate_energy(g_left=g_left,
+                                                      x_left=x_left,
+                                                      g_right=g_right,
+                                                      x_right=x_right)
                 # Squashing to the bounds of [0,1]
                 reward = self._logistic_sigmoid(self.energy_baseline/energy) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
             

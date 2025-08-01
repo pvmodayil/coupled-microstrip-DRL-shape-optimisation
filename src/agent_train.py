@@ -19,6 +19,7 @@ import torch
 
 from .coupledstrip_lib import CoupledStripArrangement
 from .coupledstrip_env import CoupledStripEnv
+import coupledstrip_lib as csa_lib
 from ._hyper_parameter import get_hyper_params
 
 from stable_baselines3 import SAC
@@ -34,7 +35,7 @@ logger: logging.Logger = logging.getLogger(__name__)
 #####################################################################################
 #                                     Functions
 #####################################################################################
-# cretae directories
+# Create directories
 ####################
 def create_directories(**kwargs) -> None:
     """
@@ -49,6 +50,8 @@ def create_directories(**kwargs) -> None:
 
 
 
+# Train, Load and Test
+######################
 def predict(env: CoupledStripEnv, model: SAC | BaseAlgorithm) -> NDArray[np.float64]:
     """
     Function to predict and take absoulte of the action
@@ -75,8 +78,24 @@ def predict(env: CoupledStripEnv, model: SAC | BaseAlgorithm) -> NDArray[np.floa
     action, _states = model.predict(obs_space)
     
     return np.abs(action)
-# main training loop function
-############################# 
+
+def calculate_energy(action:NDArray,CSA: CoupledStripArrangement) -> None:
+    vn: NDArray = csa_lib.calculate_potential_coeffs(V0=CSA.V0,
+                                                    hw_arra=CSA.hw_arra,
+                                                    width_micrstr=CSA.width_micrstr,
+                                                    space_bw_strps=CSA.space_bw_strps,
+                                                    num_fs=CSA.num_fs,
+                                                    g_left=g_left,
+                                                    x_left=x_left,
+                                                    g_right=g_right,
+                                                    x_right=x_right)
+    energy: float = csa_lib.calculate_energy(er1=CSA.er1,
+                                                er2=CSA.er2,
+                                                hw_arra=CSA.hw_arra,
+                                                ht_arra=CSA.ht_arra,
+                                                ht_subs=CSA.ht_subs,
+                                                vn=vn)
+    logger.info(f"Final predicted energy for the system: {energy} VAs")
 class IntermediatePredictionCallback(BaseCallback):
     def __init__(self, env: CoupledStripEnv, intermediate_pred_interval: int, env_type: str, intermediate_pred_dir: str) -> None:
         super(IntermediatePredictionCallback, self).__init__()
