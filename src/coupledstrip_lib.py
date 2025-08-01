@@ -48,7 +48,6 @@ def is_convex(g: NDArray[np.float64]) -> bool:
     dx2 = g[2:] - 2 * g[1:-1] + g[:-2]
     
     # Check if all second differences are non-negative
-    # return the boolean value
     return bool(np.all(dx2 >= 0))
 
 ######################################################################################
@@ -64,6 +63,7 @@ def calculate_potential_coeffs(V0: float,
                                g_right: NDArray[np.float64], 
                                x_right: NDArray[np.float64]) -> NDArray[np.float64]:
     # Dimensionality check
+    ######################
     if np.size(x_left) != np.size(g_left):
         raise ValueError(f'Dimensions of x-axis vector and g-points vector for left side do not match!\n\
                          size x_left:{np.size(x_left)}, size g_right:{np.size(g_left)}')  
@@ -156,6 +156,38 @@ def logcosh(vector: NDArray[np.float64]) -> NDArray[np.float64]:
                                                    absolute_vector - np.log(2),
                                                    np.log(np.exp(vector) + np.exp(-vector)) - np.log(2))
     return logcosh_result
+
+def calculate_energy(er1: float, er2: float, hw_arra: float, ht_arra: float, ht_subs: float, vn: np.ndarray) -> float:
+    # Constant terms
+    ################
+    e0: float = 8.854E-12
+    e1: float = er1*e0 # 8.54E-12 is permittivity constant e0
+    e2: float = er2*e0
+    
+    num_fs: int = np.size(vn)
+    n: NDArray[np.int64] = np.arange(1,num_fs+1)
+    
+    # Energy Formula Odd-Mode
+    #########################
+    coeff = (n*np.pi/4)*vn**2 # 1 x n
+    
+    # w1
+    #####
+    theta1: NDArray[np.float64] = (n*np.pi*(ht_arra-ht_subs)/hw_arra).astype(dtype=np.float64) # 1 x n
+    coth1: NDArray[np.float64] = np.exp(logcosh(theta1)-logsinh(theta1)) # log(cosh/sinh) = log(cosh) - log(sinh)
+    w1: NDArray[np.float64] = e1*coth1 # 1xn
+
+    # w2
+    #####
+    theta2: NDArray[np.float64] = (n*np.pi*ht_subs/hw_arra).astype(dtype=np.float64) # 1 x n
+    coth2: NDArray[np.float64] = np.exp(logcosh(theta2)-logsinh(theta2)) # log(cosh/sinh) = log(cosh) - log(sinh)
+    w2: NDArray[np.float64] = e2*coth2 # 1xn
+
+
+    W: float = np.sum(coeff*(w1+w2))
+    
+    return W
+    
 ######################################################################################
 #                        Capacitance, Impedance, Epsilon Effective
 ######################################################################################
