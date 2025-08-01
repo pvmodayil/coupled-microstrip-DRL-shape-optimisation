@@ -45,7 +45,7 @@ def is_monotone(g: NDArray[np.float64], type: Literal["decreasing","increasing"]
     g : NDArray[np.float64]
         g points   for Piece Wise Linear function approximation
     type : Literal["decreasing","increasing"]
-        flag to check for increasing or type
+        flag to check for increasing or decreasing
 
     Returns
     -------
@@ -59,6 +59,22 @@ def is_monotone(g: NDArray[np.float64], type: Literal["decreasing","increasing"]
 
 @njit
 def degree_monotonicity(g: NDArray[np.float64], type: Literal["decreasing","increasing"]) -> int:
+    """
+    Function to calculate the degree of monotonicity for the curve
+    How many points follow the constraint
+
+    Parameters
+    ----------
+    g : NDArray[np.float64]
+        g points   for Piece Wise Linear function approximation
+    type : Literal[&quot;decreasing&quot;,&quot;increasing&quot;]
+        flag to check for increasing or decreasing
+
+    Returns
+    -------
+    int
+        number of points that follow the constraint
+    """
     dx: NDArray[np.float64] = np.diff(g)
     if type == "decreasing":
         return int(np.sum(dx < 0))
@@ -95,6 +111,25 @@ def is_convex(g: NDArray[np.float64]) -> bool:
     # Check if all second differences are non-negative
     return bool(np.all(dx2 >= 0))
 
+@njit
+def degree_convexity(g: NDArray[np.float64]) -> int:
+    """
+    Function to calculate the degree of convexity
+
+    Parameters
+    ----------
+    g : g points   for Piece Wise Linear function approximation
+
+    Returns
+    -------
+    int
+        number of points that follow the constraint
+    """
+    # Calculate the second differences
+    dx2 = g[2:] - 2 * g[1:-1] + g[:-2]
+    
+    # count number of positive values
+    return int(np.sum(dx2>0))
 ######################################################################################
 #                              Potential & Potential Coeffs
 ######################################################################################
