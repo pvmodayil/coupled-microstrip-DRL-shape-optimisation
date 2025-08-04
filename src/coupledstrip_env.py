@@ -394,7 +394,7 @@ class CoupledStripEnv(Env):
     def render(self, mode="human") -> None:
         self.ax.cla()  # clear axes
         self.ax.plot(self.latest_x_left * 1000, self.latest_g_left, color='green')
-        self.ax.plot([self.latest_x_left[-1], self.latest_x_right[0]] * 1000, [1, 1], color='green')  # microstrip region
+        self.ax.plot(np.array([self.latest_x_left[-1], self.latest_x_right[0]]) * 1000, [1, 1], color='green')  # microstrip region
         self.ax.plot(self.latest_x_right * 1000, self.latest_g_right, color='green')
         self.ax.set_ylabel('V(x,y=c) [Volt]')
         self.ax.set_xlabel('x axis [mm]')

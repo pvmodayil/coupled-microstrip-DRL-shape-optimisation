@@ -9,6 +9,7 @@
 #                                     Imports
 #####################################################################################
 import os
+import numpy as np
 from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
@@ -18,7 +19,7 @@ def plot_potential(x_left: NDArray, g_left: NDArray,
     image_path: str = os.path.join(image_dir,'predicted_curve.png')
     plt.figure(figsize=(15,10))
     plt.plot(x_left*1000, g_left, color = 'green',label='_nolabel')
-    plt.plot([x_left[-1],x_right[0]]*1000, [1,1], color = 'green',label='_nolabel') # simulate the microstrip region
+    plt.plot(np.array([x_left[-1],x_right[0]])*1000, [1,1], color = 'green',label='_nolabel') # simulate the microstrip region
     plt.plot(x_right*1000, g_right, color = 'green',label='_nolabel')
    
     # plt.legend(loc='upper right')
