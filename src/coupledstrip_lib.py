@@ -208,14 +208,14 @@ def calculate_potential_coeffs(V0: float,
     # vn1
     ######
     vn1: NDArray[np.float64] = (1/alpha**2)*(
-        np.dot(m, np.sin(alpha*x_left_vec[1:M]) - np.sin(alpha*x_left_vec[0:M-1]))
+        np.dot(np.ascontiguousarray(m), np.ascontiguousarray(np.sin(alpha*x_left_vec[1:M]) - np.sin(alpha*x_left_vec[0:M-1])))
     ) # 1xn x [1xM-1 x M-1xn] = 1xn
     
     # vn2
     ######
     vn2: NDArray[np.float64] = (1/alpha)*(
-        np.dot(g_left[0:M-1], np.cos(alpha*x_left_vec[0:M-1]))
-        - np.dot(g_left[1:M], np.cos(alpha*x_left_vec[1:M]))
+        np.dot(np.ascontiguousarray(g_left[0:M-1]), np.ascontiguousarray(np.cos(alpha*x_left_vec[0:M-1])))
+        - np.dot(np.ascontiguousarray(g_left[1:M]), np.ascontiguousarray(np.cos(alpha*x_left_vec[1:M])))
     ) # 1xn x [1xM-1 x M-1xn] = 1xn
     
     # vn3
@@ -225,14 +225,14 @@ def calculate_potential_coeffs(V0: float,
     # vn4
     ######
     vn4: NDArray[np.float64] = (1/alpha**2)*(
-        np.dot(m_prime, np.sin(alpha*x_right_vec[1:N]) - np.sin(alpha*x_right_vec[0:N-1]))
+        np.dot(np.ascontiguousarray(m_prime), np.ascontiguousarray(np.sin(alpha*x_right_vec[1:N]) - np.sin(alpha*x_right_vec[0:N-1])))
     ) # 1xn x [1xN-1 x N-1xn] = 1xn
     
     # vn5
     ######
     vn5: NDArray[np.float64] = (1/alpha)*(
-        np.dot(g_right[0:N-1], np.cos(alpha*x_right_vec[0:N-1]))
-        - np.dot(g_right[1:N], np.cos(alpha*x_right_vec[1:N]))
+        np.dot(np.ascontiguousarray(g_right[0:N-1]), np.ascontiguousarray(np.cos(alpha*x_right_vec[0:N-1])))
+        - np.dot(np.ascontiguousarray(g_right[1:N]), np.ascontiguousarray(np.cos(alpha*x_right_vec[1:N])))
     ) # 1xn x [1xN-1 x N-1xn] = 1xn
     
     # vn
@@ -267,7 +267,7 @@ def calculate_potential(hw_arra: float,
     n: NDArray[np.int64] = np.ascontiguousarray(np.arange(1,num_fs+1))[:, np.newaxis] # nx1
     alpha: NDArray[np.float64] = (n*np.pi/hw_arra).astype(np.float64)
     sin: NDArray[np.float64] = np.sin(alpha*x) # nxm
-    VF: NDArray[np.float64] = np.dot(vn,sin) # 1xn x nxm = 1xm
+    VF: NDArray[np.float64] = np.dot(np.ascontiguousarray(vn),np.ascontiguousarray(sin)) # 1xn x nxm = 1xm
     
     return VF.astype(np.float64)
 ######################################################################################
