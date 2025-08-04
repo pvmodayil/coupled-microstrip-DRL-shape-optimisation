@@ -196,7 +196,7 @@ def calculate_potential_coeffs(V0: float,
     
     n: NDArray[np.int64] = np.arange(1,num_fs+1) # 1xn
     
-    alpha: NDArray[np.float64] = ((n*np.pi)/hw_arra).astype(dtype=np.float64) # 1xn
+    alpha: NDArray[np.float64] = ((n*np.pi)/hw_arra).astype(np.float64) # 1xn
     m: NDArray[np.float64] = (g_left[1:M] - g_left[0:M-1])/(x_left[1:M] - x_left[0:M-1]) # 1xM-1
     m_prime: NDArray[np.float64] = (g_right[1:N] - g_right[0:N-1])/(x_right[1:N] - x_right[0:N-1]) # 1xN-1
     
@@ -265,7 +265,7 @@ def calculate_potential(hw_arra: float,
     num_fs: int = np.size(vn)
     
     n: NDArray[np.int64] = np.arange(1,num_fs+1)[:, np.newaxis] # nx1
-    alpha: NDArray[np.float64] = (n*np.pi/hw_arra).astype(dtype=np.float64)
+    alpha: NDArray[np.float64] = (n*np.pi/hw_arra).astype(np.float64)
     sin: NDArray[np.float64] = np.sin(alpha*x) # nxm
     VF: NDArray[np.float64] = np.matmul(vn,sin) # 1xn x nxm = 1xm
     
@@ -360,13 +360,13 @@ def calculate_energy(er1: float, er2: float, hw_arra: float, ht_arra: float, ht_
     
     # w1
     #####
-    theta1: NDArray[np.float64] = (n*np.pi*(ht_arra-ht_subs)/hw_arra).astype(dtype=np.float64) # 1 x n
+    theta1: NDArray[np.float64] = (n*np.pi*(ht_arra-ht_subs)/hw_arra).astype(np.float64) # 1 x n
     coth1: NDArray[np.float64] = np.exp(logcosh(theta1)-logsinh(theta1)) # log(cosh/sinh) = log(cosh) - log(sinh)
     w1: NDArray[np.float64] = e1*coth1 # 1xn
 
     # w2
     #####
-    theta2: NDArray[np.float64] = (n*np.pi*ht_subs/hw_arra).astype(dtype=np.float64) # 1 x n
+    theta2: NDArray[np.float64] = (n*np.pi*ht_subs/hw_arra).astype(np.float64) # 1 x n
     coth2: NDArray[np.float64] = np.exp(logcosh(theta2)-logsinh(theta2)) # log(cosh/sinh) = log(cosh) - log(sinh)
     w2: NDArray[np.float64] = e2*coth2 # 1xn
 
