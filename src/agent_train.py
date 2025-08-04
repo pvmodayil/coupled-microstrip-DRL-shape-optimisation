@@ -97,7 +97,7 @@ class IntermediatePredictionCallback(BaseCallback):
     def _on_step(self) -> bool:
         if (self.num_timesteps == 1) or (self.num_timesteps % self.intermediate_pred_interval == 0):
             # initial prediction
-            logger.info(f"Intermediate prediction at timestep {self.num_timesteps}")
+            # logger.info(f"Intermediate prediction at timestep {self.num_timesteps}")
             action: NDArray = predict(self.env,self.model)
 
             row: NDArray = np.insert(action,0,self.num_timesteps)
@@ -107,7 +107,7 @@ class IntermediatePredictionCallback(BaseCallback):
             result_df: pd.DataFrame = pd.concat(self.action_df_rows, ignore_index=True)
 
             result_df.to_csv(self.action_df_path,index=False)
-            logger.info("Resuming training......")
+            # logger.info("Resuming training......")
         
         return True
     
