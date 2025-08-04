@@ -52,7 +52,7 @@ def is_monotone(g: NDArray[np.float64], type: Literal["decreasing","increasing"]
     bool
         returns True if monotone
     """
-    dx: NDArray[np.float64] = np.diff(g)
+    dx: NDArray[np.float64] = np.diff(np.ascontiguousarray(g))
     if type == "decreasing":
         return bool(np.all(dx < 0))
     return bool(np.all(dx > 0)) 
@@ -75,7 +75,7 @@ def degree_monotonicity(g: NDArray[np.float64], type: Literal["decreasing","incr
     int
         number of points that follow the constraint
     """
-    dx: NDArray[np.float64] = np.diff(g)
+    dx: NDArray[np.float64] = np.diff(np.ascontiguousarray(g))
     if type == "decreasing":
         return int(np.sum(dx < 0))
     return int(np.sum(dx > 0))
@@ -106,7 +106,8 @@ def is_convex(g: NDArray[np.float64]) -> bool:
         raise ValueError("The array should have at least 3 elements to perform convexity check.\nPlease use more g-points")
     
     # Calculate the second differences
-    dx2 = g[2:] - 2 * g[1:-1] + g[:-2]
+    g_contig: NDArray = np.ascontiguousarray(g)
+    dx2 = g_contig[2:] - 2 * g_contig[1:-1] + g_contig[:-2]
     
     # Check if all second differences are non-negative
     return bool(np.all(dx2 >= 0))
@@ -126,7 +127,8 @@ def degree_convexity(g: NDArray[np.float64]) -> int:
         number of points that follow the constraint
     """
     # Calculate the second differences
-    dx2 = g[2:] - 2 * g[1:-1] + g[:-2]
+    g_contig: NDArray = np.ascontiguousarray(g)
+    dx2 = g_contig[2:] - 2 * g_contig[1:-1] + g_contig[:-2]
     
     # count number of positive values
     return int(np.sum(dx2>0))
