@@ -347,7 +347,7 @@ def calculate_energy(er1: float, er2: float, hw_arra: float, ht_arra: float, ht_
     """
     # Constant terms
     ################
-    e0: float = 8.854E-12
+    e0: float = 8.854187817E-12
     e1: float = er1*e0 # 8.54E-12 is permittivity constant e0
     e2: float = er2*e0
     
@@ -419,12 +419,12 @@ def calculate_impedance(cD: float = 1.0, cL: float = 1.0, env: Literal["caseD", 
     float
         _description_
     """
-    c0 = 299792458 #m/s speed of light in vaccuum
+    e0: float = 8.854187817E-12
     match env:
         case "caseD":
-            return 1/(c0*(cD*cL)**0.5)
+            return 376.62*e0/((cD*cL)**0.5)
         case "caseL":
-            return 1/(c0*cL)
+            return 376.62*e0/cL
         case _:
             return 0.0 # must not happen as there is a default state(just for the type checker to pass)
 
