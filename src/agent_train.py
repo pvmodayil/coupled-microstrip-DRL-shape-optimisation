@@ -99,7 +99,7 @@ class IntermediatePredictionCallback(BaseCallback):
             logger.info(f"Intermediate prediction at timestep {self.num_timesteps}")
             action: NDArray = predict(self.env,self.model)
 
-            row: NDArray = np.insert(action,self.num_timesteps,0)
+            row: NDArray = np.insert(action,0,self.num_timesteps)
             row_df = pd.DataFrame([row], columns=self.column_names)
             self.action_df_rows.append(row_df)
             

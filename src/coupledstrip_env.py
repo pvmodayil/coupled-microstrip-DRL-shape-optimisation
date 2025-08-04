@@ -10,7 +10,6 @@
 #####################################################################################
 from typing import Optional, Literal
 
-from numba import njit
 import numpy as np
 from numpy.typing import NDArray
 
