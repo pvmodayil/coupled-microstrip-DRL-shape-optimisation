@@ -239,7 +239,7 @@ def calculate_potential_coeffs(V0: float,
     ######
     vn: NDArray[np.float64] = outer_coeff*(vn1+vn2+vn3+vn4+vn5)
     
-    return vn.astype(dtype=np.float64)
+    return vn.astype(np.float64)
 
 @njit
 def calculate_potential(hw_arra: float,
@@ -269,7 +269,7 @@ def calculate_potential(hw_arra: float,
     sin: NDArray[np.float64] = np.sin(alpha*x) # nxm
     VF: NDArray[np.float64] = np.matmul(vn,sin) # 1xn x nxm = 1xm
     
-    return VF.astype(dtype=np.float64)
+    return VF.astype(np.float64)
 ######################################################################################
 #                                        ENERGY
 ######################################################################################
