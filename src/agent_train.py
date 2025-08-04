@@ -183,7 +183,7 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     }
 
     # Create DataFrame from the dictionary
-    pd.DataFrame(data).to_csv(os.path.join(image_dir,'predicted_curve.csv'), index=False)
+    pd.DataFrame(data).to_excel(os.path.join(image_dir,'predicted_curve.xlsx'), index=False)
     
     energy: float = env.calculate_energy(g_left=g_left,
                                         x_left=x_left,
