@@ -9,6 +9,7 @@
 #                                     Imports
 #####################################################################################
 from typing import Optional, Literal
+import matplotlib.pyplot as plt
 
 import numpy as np
 from numpy.typing import NDArray
@@ -44,24 +45,24 @@ class CoupledStripEnv(Env):
         # Calculate the baseline energy for scaling reward
         action_left: NDArray = np.zeros(4)
         action_right: NDArray = np.zeros(4)
-        x_left: NDArray
-        g_left: NDArray
+        self.latest_x_left: NDArray
+        self.latest_g_left: NDArray
         _control: NDArray
-        x_left,g_left,_control = self.get_bezier_curve(action=action_left,side='left')
-        x_right: NDArray
-        g_right: NDArray
+        self.latest_x_left,self.latest_g_left,_control = self.get_bezier_curve(action=action_left,side='left')
+        self.latest_x_right: NDArray
+        self.latest_g_right: NDArray
         _control: NDArray
-        x_right,g_right,_control = self.get_bezier_curve(action=action_right,side='right')
+        self.latest_x_right,self.latest_g_right,_control = self.get_bezier_curve(action=action_right,side='right')
         
         vn: NDArray = csa_lib.calculate_potential_coeffs(V0=self.CSA.V0,
                                                                  hw_arra=self.CSA.hw_arra,
                                                                  width_micrstr=self.CSA.width_micrstr,
                                                                  space_bw_strps=self.CSA.space_bw_strps,
                                                                  num_fs=self.CSA.num_fs,
-                                                                 g_left=g_left,
-                                                                 x_left=x_left,
-                                                                 g_right=g_right,
-                                                                 x_right=x_right)
+                                                                 g_left=self.latest_g_left,
+                                                                 x_left=self.latest_x_left,
+                                                                 g_right=self.latest_g_right,
+                                                                 x_right=self.latest_x_right)
         
         self.energy_baseline: float = csa_lib.calculate_energy(er1=self.CSA.er1,
                                                     er2=self.CSA.er2,
@@ -71,7 +72,6 @@ class CoupledStripEnv(Env):
                                                     vn=vn)
         
         self.minimum_energy: NDArray = np.array([np.inf])
-        
         # Define action and observation space
         """
         Action Space
@@ -103,7 +103,14 @@ class CoupledStripEnv(Env):
         | 5            | er2                   | 0                 | Inf                |
         """
         self.observation_space: Box = Box(low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32) #type:ignore
-    
+
+        """
+        Render Function 
+        -------------------
+        """
+        plt.ion()
+        self.fig, self.ax = plt.subplots(figsize=(15,10))
+        
     def _get_control_points(self,action:NDArray[np.float64],
                      side: Literal["left","right"]) -> NDArray[np.float64]:
         """
@@ -364,18 +371,15 @@ class CoupledStripEnv(Env):
         mid_point: int = int(self.action_space.shape[0]/2)
         action_left: NDArray = action[:mid_point]
         action_right: NDArray = action[mid_point:]
-        x_left: NDArray
-        g_left: NDArray
-        _control: NDArray
-        x_left,g_left,_control = self.get_bezier_curve(action=action_left,side='left')
-        x_right: NDArray
-        g_right: NDArray
-        x_right,g_right,_control = self.get_bezier_curve(action=action_right,side='right')
+        
+        self.latest_x_left,self.latest_g_left,_control = self.get_bezier_curve(action=action_left,side='left')
+        self.latest_x_right,self.latest_g_right,_control = self.get_bezier_curve(action=action_right,side='right')
+        
         reward: float = self.get_reward(action=action,
-                                        g_left=g_left,
-                                        x_left=x_left,
-                                        g_right=g_right,
-                                        x_right=x_right)
+                                        g_left=self.latest_g_left,
+                                        x_left=self.latest_x_left,
+                                        g_right=self.latest_g_right,
+                                        x_right=self.latest_x_right)
         
         
         
@@ -386,3 +390,14 @@ class CoupledStripEnv(Env):
         terminated = True
         
         return obs_space, reward, terminated, truncated, info
+    
+    def render(self, mode="human") -> None:
+        self.ax.cla()  # clear axes
+        self.ax.plot(self.latest_x_left * 1000, self.latest_g_left, color='green')
+        self.ax.plot([self.latest_x_left[-1], self.latest_x_right[0]] * 1000, [1, 1], color='green')  # microstrip region
+        self.ax.plot(self.latest_x_right * 1000, self.latest_g_right, color='green')
+        self.ax.set_ylabel('V(x,y=c) [Volt]')
+        self.ax.set_xlabel('x axis [mm]')
+        self.ax.grid(True)
+        plt.draw()
+        plt.pause(0.001)
