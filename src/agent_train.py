@@ -208,8 +208,8 @@ def main(CSA: CoupledStripArrangement) -> None:
                                  log_dir=log_dir, 
                                  intermediate_pred_dir=intermediate_pred_dir,
                                  device=device,
-                                 timesteps=50,
-                                 intermediate_pred_interval=5,
+                                 timesteps=50000,
+                                 intermediate_pred_interval=5000,
                                  tb_log_name="CSA_ODD")
     
     test(model_path=model_save_path,env=env,image_dir=image_dir)
@@ -223,9 +223,12 @@ def main(CSA: CoupledStripArrangement) -> None:
         
         for log_file in log_files:
             log_file_path: str = os.path.join(subdir_path, log_file)
-            plot_metric.plot_rewards(image_dir=image_dir, log_file_path=log_file_path)
-            plot_metric.plot_loss(image_dir=image_dir, log_file_path=log_file_path)
-            plot_metric.plot_entropy(image_dir=image_dir, log_file_path=log_file_path)
+            try:
+                plot_metric.plot_rewards(image_dir=image_dir, log_file_path=log_file_path)
+                plot_metric.plot_loss(image_dir=image_dir, log_file_path=log_file_path)
+                plot_metric.plot_entropy(image_dir=image_dir, log_file_path=log_file_path)
+            except Exception as e:
+                print(e)
 
 if __name__ == "__main__":
     CSA: CoupledStripArrangement = CoupledStripArrangement(
