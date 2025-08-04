@@ -200,8 +200,8 @@ def calculate_potential_coeffs(V0: float,
     m: NDArray[np.float64] = (g_left[1:M] - g_left[0:M-1])/(x_left[1:M] - x_left[0:M-1]) # 1xM-1
     m_prime: NDArray[np.float64] = (g_right[1:N] - g_right[0:N-1])/(x_right[1:N] - x_right[0:N-1]) # 1xN-1
     
-    x_left_vec: NDArray[np.float64] = np.reshape(x_left,(-1,1)) # Mx1
-    x_right_vec: NDArray[np.float64] = np.reshape(x_right,(-1,1)) # Nx1
+    x_left_vec: NDArray[np.float64] = np.reshape(np.ascontiguousarray(x_left),(-1,1)) # Mx1
+    x_right_vec: NDArray[np.float64] = np.reshape(np.ascontiguousarray(x_right),(-1,1)) # Nx1
     
     outer_coeff: float = 2*V0/hw_arra
     
@@ -264,7 +264,7 @@ def calculate_potential(hw_arra: float,
     """
     num_fs: int = np.size(vn)
     
-    n: NDArray[np.int64] = np.arange(1,num_fs+1)[:, np.newaxis] # nx1
+    n: NDArray[np.int64] = np.ascontiguousarray(np.arange(1,num_fs+1))[:, np.newaxis] # nx1
     alpha: NDArray[np.float64] = (n*np.pi/hw_arra).astype(np.float64)
     sin: NDArray[np.float64] = np.sin(alpha*x) # nxm
     VF: NDArray[np.float64] = np.matmul(vn,sin) # 1xn x nxm = 1xm
