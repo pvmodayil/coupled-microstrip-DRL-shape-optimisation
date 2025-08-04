@@ -183,7 +183,7 @@ def test(model_path: str, env: CoupledStripEnv) -> None:
 ######################      
 def main(CSA: CoupledStripArrangement) -> None:
     # environment type
-    env_type: str = "caseL" if CSA.er1 == 1.0 else "caseD"
+    env_type: str = "caseL" if CSA.er2 == 1.0 else "caseD"
     
     cwd: str = os.getcwd()  
     model_dir: str = os.path.join(cwd,"training",env_type,"models") # training/env_type/models
