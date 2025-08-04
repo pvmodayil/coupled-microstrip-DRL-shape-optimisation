@@ -22,6 +22,7 @@ from coupledstrip_env import CoupledStripEnv
 from _hyper_parameter import get_hyper_params
 
 from utils import plot_train_metrics as plot_metric
+from utils import plot_curve as plot_curve
 
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback
@@ -157,7 +158,7 @@ def train(env: CoupledStripEnv,
     
     return model_save_path
 
-def test(model_path: str, env: CoupledStripEnv) -> None:
+def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     model: SAC = SAC.load(model_path)
     action: NDArray = predict(env,model)
     
@@ -178,6 +179,7 @@ def test(model_path: str, env: CoupledStripEnv) -> None:
                                         g_right=g_right,
                                         x_right=x_right)
     logger.info(f"Final predicted energy for the system: {energy} VAs")
+    plot_curve.plot_potential(x_left=x_left,g_left=g_left,x_right=x_right,g_right=g_right,image_dir=image_dir)
     
 # main called function
 ######################      
@@ -210,7 +212,7 @@ def main(CSA: CoupledStripArrangement) -> None:
                                  intermediate_pred_interval=5,
                                  tb_log_name="CSA_ODD")
     
-    test(model_path=model_save_path,env=env)
+    test(model_path=model_save_path,env=env,image_dir=image_dir)
 
     # plot the training metrics
     subdir_log_dir: list[str] = os.listdir(log_dir) # generally only one folder exists
