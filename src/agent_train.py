@@ -78,11 +78,10 @@ def predict(env: CoupledStripEnv, model: SAC | BaseAlgorithm) -> NDArray[np.floa
     
     return np.abs(action)
 class IntermediatePredictionCallback(BaseCallback):
-    def __init__(self, env: CoupledStripEnv, intermediate_pred_interval: int, env_type: str, intermediate_pred_dir: str) -> None:
+    def __init__(self, env: CoupledStripEnv, intermediate_pred_interval: int, intermediate_pred_dir: str) -> None:
         super(IntermediatePredictionCallback, self).__init__()
         self.env: CoupledStripEnv = env
         self.intermediate_pred_interval: int = intermediate_pred_interval
-        self.env_type: str = env_type
         self.entropy_coefficient_set = False
         
         # Action DF
@@ -117,13 +116,6 @@ def train(env: CoupledStripEnv,
           timesteps: int,
           intermediate_pred_interval: int) -> str:
     
-    # environment type
-    env_type: str
-    match env.CSA.er1:
-        case 1.0:
-            env_type = "caseL"
-        case _:
-            env_type = "caseD"
     # Get the hyperparameters
     policy_kwargs: dict
     hyperparams: dict
@@ -145,18 +137,17 @@ def train(env: CoupledStripEnv,
     model.learn(total_timesteps=timesteps,
         log_interval=4,
         reset_num_timesteps=True, 
-        tb_log_name=env_type,
+        tb_log_name="CSA_ODD",
         progress_bar=True,
         callback=IntermediatePredictionCallback(env=env,
                                                 intermediate_pred_interval=intermediate_pred_interval,
-                                                env_type=env_type,
                                                 intermediate_pred_dir=intermediate_pred_dir))
     
     training_time: float = (time.time() - start_time)/60 # in minutes
     logger.info(f"Training ended with total training time: {training_time}......")
     
     # Save the trained model
-    model_save_path: str = os.path.join(model_dir, "sac_coupled_strip")
+    model_save_path: str = os.path.join(model_dir, "SAC_CSA_ODD")
     model.save(model_save_path, include="all")
     
     logger.info(f"Training completed and model saved at {model_save_path}.")      
@@ -188,11 +179,14 @@ def test(model_path: str, env: CoupledStripEnv) -> None:
 # main called function
 ######################      
 def main(CSA: CoupledStripArrangement) -> None:
+    # environment type
+    env_type: str = "caseL" if CSA.er1 == 1.0 else "caseD"
+    
     cwd: str = os.getcwd()  
-    model_dir: str = os.path.join(cwd,"training","models") # training/models
-    log_dir: str = os.path.join(cwd,"training","logs") # training/logs
-    image_dir: str = os.path.join(cwd,"training","images") # training/images
-    intermediate_pred_dir: str = os.path.join(cwd,"training","intermediate_prediction") # training/intermediate_prediction
+    model_dir: str = os.path.join(cwd,"training",env_type,"models") # training/env_type/models
+    log_dir: str = os.path.join(cwd,"training",env_type,"logs") # training/env_type/logs
+    image_dir: str = os.path.join(cwd,"training",env_type,"images") # training/env_type/images
+    intermediate_pred_dir: str = os.path.join(cwd,"training",env_type,"intermediate_prediction") # training/env_type/intermediate_prediction
     create_directories(mdirRoot=model_dir, 
                     ldirRoot=log_dir, 
                     idirRoot=image_dir, 
