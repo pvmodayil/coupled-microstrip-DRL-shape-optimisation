@@ -82,7 +82,7 @@ class CoupledStripEnv(Env):
         | control fcator  | -bound            | bound              | ndarray(4,)|
         
         """
-        bound: float = 0.4
+        bound: float = 0.2
         self.action_space: Box = Box(low=-bound, high=bound, shape=(8,), dtype=np.float32) #type:ignore
         self.action_space_bound: float = bound
         """
@@ -211,7 +211,7 @@ class CoupledStripEnv(Env):
         """
         # For the sigmoid function the steep increase starts around x=-2 (check graphs of sigmoid)
         # Since x is always positive in this case, do a left shift to get that steep increase
-        x_shifted: float = x - 2 
+        x_shifted: float = x
         sigmoid_val: float = 1/(1+np.exp(-x_shifted))
         
         return sigmoid_val
