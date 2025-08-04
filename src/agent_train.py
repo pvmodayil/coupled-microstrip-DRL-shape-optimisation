@@ -21,6 +21,8 @@ from .coupledstrip_lib import CoupledStripArrangement
 from .coupledstrip_env import CoupledStripEnv
 from ._hyper_parameter import get_hyper_params
 
+from .utils import plot_train_metrics as plot_metric
+
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.base_class import BaseAlgorithm
@@ -114,7 +116,8 @@ def train(env: CoupledStripEnv,
           intermediate_pred_dir: str,
           device: torch.device,
           timesteps: int,
-          intermediate_pred_interval: int) -> str:
+          intermediate_pred_interval: int,
+          tb_log_name: str) -> str:
     
     # Get the hyperparameters
     policy_kwargs: dict
@@ -137,7 +140,7 @@ def train(env: CoupledStripEnv,
     model.learn(total_timesteps=timesteps,
         log_interval=4,
         reset_num_timesteps=True, 
-        tb_log_name="CSA_ODD",
+        tb_log_name=tb_log_name,
         progress_bar=True,
         callback=IntermediatePredictionCallback(env=env,
                                                 intermediate_pred_interval=intermediate_pred_interval,
@@ -195,7 +198,7 @@ def main(CSA: CoupledStripArrangement) -> None:
     logger.info(f"CUDA available: {torch.cuda.is_available()}")
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    # Train the model
+    # Train and test the model
     env: CoupledStripEnv = CoupledStripEnv(CSA=CSA)
     
     model_save_path: str = train(env=env, 
@@ -204,9 +207,23 @@ def main(CSA: CoupledStripArrangement) -> None:
                                  intermediate_pred_dir=intermediate_pred_dir,
                                  device=device,
                                  timesteps=50000,
-                                 intermediate_pred_interval=5000)
+                                 intermediate_pred_interval=5000,
+                                 tb_log_name="CSA_ODD")
     
     test(model_path=model_save_path,env=env)
+
+    # plot the training metrics
+    subdir_log_dir: list[str] = os.listdir(log_dir) # generally only one folder exists
+    
+    for sub_dir in subdir_log_dir:
+        subdir_path: str = os.path.join(log_dir, sub_dir)
+        log_files: list[str] = os.listdir(subdir_path)
+        
+        for log_file in log_files:
+            log_file_path: str = os.path.join(subdir_path, log_file)
+            plot_metric.plot_rewards(image_dir=image_dir, log_file_path=log_file_path)
+            plot_metric.plot_loss(image_dir=image_dir, log_file_path=log_file_path)
+            plot_metric.plot_entropy(image_dir=image_dir, log_file_path=log_file_path)
 
 if __name__ == "__main__":
     CSA: CoupledStripArrangement = CoupledStripArrangement(
