@@ -17,11 +17,11 @@ from numpy.typing import NDArray
 
 import torch
 
-from .coupledstrip_lib import CoupledStripArrangement
-from .coupledstrip_env import CoupledStripEnv
-from ._hyper_parameter import get_hyper_params
+from coupledstrip_lib import CoupledStripArrangement
+from coupledstrip_env import CoupledStripEnv
+from _hyper_parameter import get_hyper_params
 
-from .utils import plot_train_metrics as plot_metric
+from utils import plot_train_metrics as plot_metric
 
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback
@@ -206,8 +206,8 @@ def main(CSA: CoupledStripArrangement) -> None:
                                  log_dir=log_dir, 
                                  intermediate_pred_dir=intermediate_pred_dir,
                                  device=device,
-                                 timesteps=50000,
-                                 intermediate_pred_interval=5000,
+                                 timesteps=50,
+                                 intermediate_pred_interval=5,
                                  tb_log_name="CSA_ODD")
     
     test(model_path=model_save_path,env=env)

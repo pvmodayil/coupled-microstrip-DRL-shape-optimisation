@@ -20,7 +20,7 @@ from gymnasium.spaces import Box
 
 # CSA Lib
 import coupledstrip_lib as csa_lib
-from .coupledstrip_lib import CoupledStripArrangement
+from coupledstrip_lib import CoupledStripArrangement
 
 import logging
 # Set up logging
