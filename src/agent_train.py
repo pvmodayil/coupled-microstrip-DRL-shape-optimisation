@@ -17,9 +17,12 @@ from numpy.typing import NDArray
 
 import torch
 
-from .coupledstrip_lib import CoupledStripArrangement
-from .coupledstrip_env import CoupledStripEnv
-from ._hyper_parameter import get_hyper_params
+from coupledstrip_lib import CoupledStripArrangement
+from coupledstrip_env import CoupledStripEnv
+from _hyper_parameter import get_hyper_params
+
+from utils import plot_train_metrics as plot_metric
+from utils import plot_curve as plot_curve
 
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback
@@ -78,11 +81,10 @@ def predict(env: CoupledStripEnv, model: SAC | BaseAlgorithm) -> NDArray[np.floa
     
     return np.abs(action)
 class IntermediatePredictionCallback(BaseCallback):
-    def __init__(self, env: CoupledStripEnv, intermediate_pred_interval: int, env_type: str, intermediate_pred_dir: str) -> None:
+    def __init__(self, env: CoupledStripEnv, intermediate_pred_interval: int, intermediate_pred_dir: str) -> None:
         super(IntermediatePredictionCallback, self).__init__()
         self.env: CoupledStripEnv = env
         self.intermediate_pred_interval: int = intermediate_pred_interval
-        self.env_type: str = env_type
         self.entropy_coefficient_set = False
         
         # Action DF
@@ -95,17 +97,17 @@ class IntermediatePredictionCallback(BaseCallback):
     def _on_step(self) -> bool:
         if (self.num_timesteps == 1) or (self.num_timesteps % self.intermediate_pred_interval == 0):
             # initial prediction
-            logger.info(f"Intermediate prediction at timestep {self.num_timesteps}")
+            # logger.info(f"Intermediate prediction at timestep {self.num_timesteps}")
             action: NDArray = predict(self.env,self.model)
 
-            row: NDArray = np.insert(action,self.num_timesteps,0)
+            row: NDArray = np.insert(action,0,self.num_timesteps)
             row_df = pd.DataFrame([row], columns=self.column_names)
             self.action_df_rows.append(row_df)
             
             result_df: pd.DataFrame = pd.concat(self.action_df_rows, ignore_index=True)
 
             result_df.to_csv(self.action_df_path,index=False)
-            logger.info("Resuming training......")
+            # logger.info("Resuming training......")
         
         return True
     
@@ -115,15 +117,9 @@ def train(env: CoupledStripEnv,
           intermediate_pred_dir: str,
           device: torch.device,
           timesteps: int,
-          intermediate_pred_interval: int) -> str:
+          intermediate_pred_interval: int,
+          tb_log_name: str) -> str:
     
-    # environment type
-    env_type: str
-    match env.CSA.er1:
-        case 1.0:
-            env_type = "caseL"
-        case _:
-            env_type = "caseD"
     # Get the hyperparameters
     policy_kwargs: dict
     hyperparams: dict
@@ -145,25 +141,24 @@ def train(env: CoupledStripEnv,
     model.learn(total_timesteps=timesteps,
         log_interval=4,
         reset_num_timesteps=True, 
-        tb_log_name=env_type,
+        tb_log_name=tb_log_name,
         progress_bar=True,
         callback=IntermediatePredictionCallback(env=env,
                                                 intermediate_pred_interval=intermediate_pred_interval,
-                                                env_type=env_type,
                                                 intermediate_pred_dir=intermediate_pred_dir))
     
     training_time: float = (time.time() - start_time)/60 # in minutes
     logger.info(f"Training ended with total training time: {training_time}......")
     
     # Save the trained model
-    model_save_path: str = os.path.join(model_dir, "sac_coupled_strip")
+    model_save_path: str = os.path.join(model_dir, "SAC_CSA_ODD")
     model.save(model_save_path, include="all")
     
     logger.info(f"Training completed and model saved at {model_save_path}.")      
     
     return model_save_path
 
-def test(model_path: str, env: CoupledStripEnv) -> None:
+def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     model: SAC = SAC.load(model_path)
     action: NDArray = predict(env,model)
     
@@ -179,20 +174,35 @@ def test(model_path: str, env: CoupledStripEnv) -> None:
     g_right: NDArray
     x_right,g_right,_control = env.get_bezier_curve(action=action_right,side='right')
     
+    # Create a dictionary to hold the data
+    data: dict[str, NDArray] = {
+        'x_left': x_left,
+        'g_left': g_left,
+        'x_right': x_right,
+        'g_right': g_right
+    }
+
+    # Create DataFrame from the dictionary
+    pd.DataFrame(data).to_excel(os.path.join(image_dir,'predicted_curve.xlsx'), index=False)
+    
     energy: float = env.calculate_energy(g_left=g_left,
                                         x_left=x_left,
                                         g_right=g_right,
                                         x_right=x_right)
     logger.info(f"Final predicted energy for the system: {energy} VAs")
+    plot_curve.plot_potential(x_left=x_left,g_left=g_left,x_right=x_right,g_right=g_right,image_dir=image_dir)
     
 # main called function
 ######################      
 def main(CSA: CoupledStripArrangement) -> None:
+    # environment type
+    env_type: str = "caseL" if CSA.er2 == 1.0 else "caseD"
+    
     cwd: str = os.getcwd()  
-    model_dir: str = os.path.join(cwd,"training","models") # training/models
-    log_dir: str = os.path.join(cwd,"training","logs") # training/logs
-    image_dir: str = os.path.join(cwd,"training","images") # training/images
-    intermediate_pred_dir: str = os.path.join(cwd,"training","intermediate_prediction") # training/intermediate_prediction
+    model_dir: str = os.path.join(cwd,"training",env_type,"models") # training/env_type/models
+    log_dir: str = os.path.join(cwd,"training",env_type,"logs") # training/env_type/logs
+    image_dir: str = os.path.join(cwd,"training",env_type,"images") # training/env_type/images
+    intermediate_pred_dir: str = os.path.join(cwd,"training",env_type,"intermediate_prediction") # training/env_type/intermediate_prediction
     create_directories(mdirRoot=model_dir, 
                     ldirRoot=log_dir, 
                     idirRoot=image_dir, 
@@ -201,7 +211,7 @@ def main(CSA: CoupledStripArrangement) -> None:
     logger.info(f"CUDA available: {torch.cuda.is_available()}")
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    # Train the model
+    # Train and test the model
     env: CoupledStripEnv = CoupledStripEnv(CSA=CSA)
     
     model_save_path: str = train(env=env, 
@@ -210,21 +220,38 @@ def main(CSA: CoupledStripArrangement) -> None:
                                  intermediate_pred_dir=intermediate_pred_dir,
                                  device=device,
                                  timesteps=50000,
-                                 intermediate_pred_interval=5000)
+                                 intermediate_pred_interval=5000,
+                                 tb_log_name="CSA_ODD")
     
-    test(model_path=model_save_path,env=env)
+    test(model_path=model_save_path,env=env,image_dir=image_dir)
+
+    # plot the training metrics
+    subdir_log_dir: list[str] = os.listdir(log_dir) # generally only one folder exists
+    
+    for sub_dir in subdir_log_dir:
+        subdir_path: str = os.path.join(log_dir, sub_dir)
+        log_files: list[str] = os.listdir(subdir_path)
+        
+        for log_file in log_files:
+            log_file_path: str = os.path.join(subdir_path, log_file)
+            try:
+                plot_metric.plot_rewards(image_dir=image_dir, log_file_path=log_file_path)
+                plot_metric.plot_loss(image_dir=image_dir, log_file_path=log_file_path)
+                plot_metric.plot_entropy(image_dir=image_dir, log_file_path=log_file_path)
+            except Exception as e:
+                print(e)
 
 if __name__ == "__main__":
     CSA: CoupledStripArrangement = CoupledStripArrangement(
         V0=1., # Potential of the sytem, used to scale the system which is defaulted at V0=1.0
-        hw_arra=1., # half width of the arrangement, parameter a
-        ht_arra=1., # height of the arrangement, parameter b
-        ht_subs=1., # height of the substrate, parameter h
-        space_bw_strps=1., # gap between the two microstrips, parameter s
-        width_micrstr=1., # width of the microstrip, parameter w
-        ht_micrstr=1., # height of the microstripm, parameter t
-        er1=1., # dielectric constatnt for medium 1
-        er2=1., # dielctric constant for medium 2
+        hw_arra=3E-3, # half width of the arrangement, parameter a
+        ht_arra=2.76E-3, # height of the arrangement, parameter b
+        ht_subs=112E-6, # height of the substrate, parameter h
+        space_bw_strps=200E-6, # gap between the two microstrips, parameter s
+        width_micrstr=150E-6, # width of the microstrip, parameter w
+        ht_micrstr=0, # height of the microstripm, parameter t
+        er1=1.0, # dielectric constatnt for medium 1
+        er2=4.5, # dielctric constant for medium 2
         num_fs=2000, # number of fourier series coefficients
         num_pts=100 # number of points for the piece wise linear approaximation
     )

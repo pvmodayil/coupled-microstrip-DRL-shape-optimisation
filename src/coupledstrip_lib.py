@@ -52,7 +52,7 @@ def is_monotone(g: NDArray[np.float64], type: Literal["decreasing","increasing"]
     bool
         returns True if monotone
     """
-    dx: NDArray[np.float64] = np.diff(g)
+    dx: NDArray[np.float64] = np.diff(np.ascontiguousarray(g))
     if type == "decreasing":
         return bool(np.all(dx < 0))
     return bool(np.all(dx > 0)) 
@@ -75,7 +75,7 @@ def degree_monotonicity(g: NDArray[np.float64], type: Literal["decreasing","incr
     int
         number of points that follow the constraint
     """
-    dx: NDArray[np.float64] = np.diff(g)
+    dx: NDArray[np.float64] = np.diff(np.ascontiguousarray(g))
     if type == "decreasing":
         return int(np.sum(dx < 0))
     return int(np.sum(dx > 0))
@@ -106,7 +106,8 @@ def is_convex(g: NDArray[np.float64]) -> bool:
         raise ValueError("The array should have at least 3 elements to perform convexity check.\nPlease use more g-points")
     
     # Calculate the second differences
-    dx2 = g[2:] - 2 * g[1:-1] + g[:-2]
+    g_contig: NDArray = np.ascontiguousarray(g)
+    dx2 = g_contig[2:] - 2 * g_contig[1:-1] + g_contig[:-2]
     
     # Check if all second differences are non-negative
     return bool(np.all(dx2 >= 0))
@@ -126,7 +127,8 @@ def degree_convexity(g: NDArray[np.float64]) -> int:
         number of points that follow the constraint
     """
     # Calculate the second differences
-    dx2 = g[2:] - 2 * g[1:-1] + g[:-2]
+    g_contig: NDArray = np.ascontiguousarray(g)
+    dx2 = g_contig[2:] - 2 * g_contig[1:-1] + g_contig[:-2]
     
     # count number of positive values
     return int(np.sum(dx2>0))
@@ -196,26 +198,26 @@ def calculate_potential_coeffs(V0: float,
     
     n: NDArray[np.int64] = np.arange(1,num_fs+1) # 1xn
     
-    alpha: NDArray[np.float64] = ((n*np.pi)/hw_arra).astype(dtype=np.float64) # 1xn
+    alpha: NDArray[np.float64] = ((n*np.pi)/hw_arra).astype(np.float64) # 1xn
     m: NDArray[np.float64] = (g_left[1:M] - g_left[0:M-1])/(x_left[1:M] - x_left[0:M-1]) # 1xM-1
     m_prime: NDArray[np.float64] = (g_right[1:N] - g_right[0:N-1])/(x_right[1:N] - x_right[0:N-1]) # 1xN-1
     
-    x_left_vec: NDArray[np.float64] = np.reshape(x_left,(-1,1)) # Mx1
-    x_right_vec: NDArray[np.float64] = np.reshape(x_right,(-1,1)) # Nx1
+    x_left_vec: NDArray[np.float64] = np.reshape(np.ascontiguousarray(x_left),(-1,1)) # Mx1
+    x_right_vec: NDArray[np.float64] = np.reshape(np.ascontiguousarray(x_right),(-1,1)) # Nx1
     
     outer_coeff: float = 2*V0/hw_arra
     
     # vn1
     ######
     vn1: NDArray[np.float64] = (1/alpha**2)*(
-        np.matmul(m, np.sin(alpha*x_left_vec[1:M]) - np.sin(alpha*x_left_vec[0:M-1]))
+        np.dot(np.ascontiguousarray(m), np.ascontiguousarray(np.sin(alpha*x_left_vec[1:M]) - np.sin(alpha*x_left_vec[0:M-1])))
     ) # 1xn x [1xM-1 x M-1xn] = 1xn
     
     # vn2
     ######
     vn2: NDArray[np.float64] = (1/alpha)*(
-        np.matmul(g_left[0:M-1], np.cos(alpha*x_left_vec[0:M-1]))
-        - np.matmul(g_left[1:M], np.cos(alpha*x_left_vec[1:M]))
+        np.dot(np.ascontiguousarray(g_left[0:M-1]), np.ascontiguousarray(np.cos(alpha*x_left_vec[0:M-1])))
+        - np.dot(np.ascontiguousarray(g_left[1:M]), np.ascontiguousarray(np.cos(alpha*x_left_vec[1:M])))
     ) # 1xn x [1xM-1 x M-1xn] = 1xn
     
     # vn3
@@ -225,21 +227,21 @@ def calculate_potential_coeffs(V0: float,
     # vn4
     ######
     vn4: NDArray[np.float64] = (1/alpha**2)*(
-        np.matmul(m_prime, np.sin(alpha*x_right_vec[1:N]) - np.sin(alpha*x_right_vec[0:N-1]))
+        np.dot(np.ascontiguousarray(m_prime), np.ascontiguousarray(np.sin(alpha*x_right_vec[1:N]) - np.sin(alpha*x_right_vec[0:N-1])))
     ) # 1xn x [1xN-1 x N-1xn] = 1xn
     
     # vn5
     ######
     vn5: NDArray[np.float64] = (1/alpha)*(
-        np.matmul(g_right[0:N-1], np.cos(alpha*x_right_vec[0:N-1]))
-        - np.matmul(g_right[1:N], np.cos(alpha*x_right_vec[1:N]))
+        np.dot(np.ascontiguousarray(g_right[0:N-1]), np.ascontiguousarray(np.cos(alpha*x_right_vec[0:N-1])))
+        - np.dot(np.ascontiguousarray(g_right[1:N]), np.ascontiguousarray(np.cos(alpha*x_right_vec[1:N])))
     ) # 1xn x [1xN-1 x N-1xn] = 1xn
     
     # vn
     ######
     vn: NDArray[np.float64] = outer_coeff*(vn1+vn2+vn3+vn4+vn5)
     
-    return vn.astype(dtype=np.float64)
+    return vn.astype(np.float64)
 
 @njit
 def calculate_potential(hw_arra: float,
@@ -264,12 +266,12 @@ def calculate_potential(hw_arra: float,
     """
     num_fs: int = np.size(vn)
     
-    n: NDArray[np.int64] = np.arange(1,num_fs+1)[:, np.newaxis] # nx1
-    alpha: NDArray[np.float64] = (n*np.pi/hw_arra).astype(dtype=np.float64)
+    n: NDArray[np.int64] = np.ascontiguousarray(np.arange(1,num_fs+1))[:, np.newaxis] # nx1
+    alpha: NDArray[np.float64] = (n*np.pi/hw_arra).astype(np.float64)
     sin: NDArray[np.float64] = np.sin(alpha*x) # nxm
-    VF: NDArray[np.float64] = np.matmul(vn,sin) # 1xn x nxm = 1xm
+    VF: NDArray[np.float64] = np.dot(np.ascontiguousarray(vn),np.ascontiguousarray(sin)) # 1xn x nxm = 1xm
     
-    return VF.astype(dtype=np.float64)
+    return VF.astype(np.float64)
 ######################################################################################
 #                                        ENERGY
 ######################################################################################
@@ -347,7 +349,7 @@ def calculate_energy(er1: float, er2: float, hw_arra: float, ht_arra: float, ht_
     """
     # Constant terms
     ################
-    e0: float = 8.854E-12
+    e0: float = 8.854187817E-12
     e1: float = er1*e0 # 8.54E-12 is permittivity constant e0
     e2: float = er2*e0
     
@@ -360,13 +362,13 @@ def calculate_energy(er1: float, er2: float, hw_arra: float, ht_arra: float, ht_
     
     # w1
     #####
-    theta1: NDArray[np.float64] = (n*np.pi*(ht_arra-ht_subs)/hw_arra).astype(dtype=np.float64) # 1 x n
+    theta1: NDArray[np.float64] = (n*np.pi*(ht_arra-ht_subs)/hw_arra).astype(np.float64) # 1 x n
     coth1: NDArray[np.float64] = np.exp(logcosh(theta1)-logsinh(theta1)) # log(cosh/sinh) = log(cosh) - log(sinh)
     w1: NDArray[np.float64] = e1*coth1 # 1xn
 
     # w2
     #####
-    theta2: NDArray[np.float64] = (n*np.pi*ht_subs/hw_arra).astype(dtype=np.float64) # 1 x n
+    theta2: NDArray[np.float64] = (n*np.pi*ht_subs/hw_arra).astype(np.float64) # 1 x n
     coth2: NDArray[np.float64] = np.exp(logcosh(theta2)-logsinh(theta2)) # log(cosh/sinh) = log(cosh) - log(sinh)
     w2: NDArray[np.float64] = e2*coth2 # 1xn
 
@@ -419,12 +421,12 @@ def calculate_impedance(cD: float = 1.0, cL: float = 1.0, env: Literal["caseD", 
     float
         _description_
     """
-    c0 = 299792458 #m/s speed of light in vaccuum
+    e0: float = 8.854187817E-12
     match env:
         case "caseD":
-            return 1/(c0*(cD*cL)**0.5)
+            return 376.62*e0/((cD*cL)**0.5)
         case "caseL":
-            return 1/(c0*cL)
+            return 376.62*e0/cL
         case _:
             return 0.0 # must not happen as there is a default state(just for the type checker to pass)
 
