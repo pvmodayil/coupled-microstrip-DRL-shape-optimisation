@@ -1,3 +1,5 @@
 # training folder
 training/
 training/*
+
+src/_pycache_
