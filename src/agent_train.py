@@ -174,6 +174,17 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     g_right: NDArray
     x_right,g_right,_control = env.get_bezier_curve(action=action_right,side='right')
     
+    # Create a dictionary to hold the data
+    data: dict[str, NDArray] = {
+        'x_left': x_left,
+        'g_left': g_left,
+        'x_right': x_right,
+        'g_right': g_right
+    }
+
+    # Create DataFrame from the dictionary
+    pd.DataFrame(data).to_csv(os.path.join(image_dir,'predicted_curve.csv'), index=False)
+    
     energy: float = env.calculate_energy(g_left=g_left,
                                         x_left=x_left,
                                         g_right=g_right,
