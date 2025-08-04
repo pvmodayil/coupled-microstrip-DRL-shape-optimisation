@@ -13,4 +13,5 @@ dependencies = [
     "stable-baselines3==2.1.0",
     "numba==0.61.2",
     "tensorboard>=2.20.0",
+    "scipy>=1.16.1",
 ]
