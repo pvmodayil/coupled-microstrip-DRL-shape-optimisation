@@ -196,7 +196,6 @@ class CoupledStripEnv(Env):
         
         return x_coords,y_coords,control_points
     
-    @njit
     def _logistic_sigmoid(self, x: float) -> float:
         """
         Function to calculate the logistic sigmoid function value.
@@ -219,7 +218,6 @@ class CoupledStripEnv(Env):
         
         return sigmoid_val
     
-    @njit
     def calculate_energy(self,
             g_left: NDArray[np.float64], 
             x_left: NDArray[np.float64],
@@ -261,7 +259,6 @@ class CoupledStripEnv(Env):
                                                 vn=vn)
         return energy
     
-    @njit
     def get_reward(self,
             action: NDArray[np.float64],
             g_left: NDArray[np.float64], 
