@@ -2,6 +2,9 @@
 training/
 training/*
 
+# pycache
 src/_pycache_
-
 src/utils/_pycache_
+
+# cpp build folder
+src/ga_lib/build/
