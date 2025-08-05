@@ -3,7 +3,7 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/src/ga_lib/extern/Eigen/**",
+                "${workspaceFolder}/src/ga_lib/extern/**",
                 "${workspaceFolder}/src/ga_lib/extern/pybind11/include/**",
                 "C:/Users/pvmod/AppData/Local/Programs/Python/Python310/include"
             ],
