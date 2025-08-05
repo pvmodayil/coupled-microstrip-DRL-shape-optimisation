@@ -13,10 +13,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 add_executable(coupledstrip_arrangement
   main.cpp
   include/file_io.cpp
-  include/coupledstrib_lib.cpp
+  include/coupledstrip_lib.cpp
   include/genetic_algorithm.cpp
 )
-
+set_target_properties(coupledstrip_arrangement PROPERTIES WIN32_EXECUTABLE OFF)
 target_include_directories(coupledstrip_arrangement PRIVATE include extern)
 
 # Enable OpenMP if available
