@@ -8,3 +8,6 @@ src/utils/_pycache_
 
 # cpp build folder
 src/ga_lib/build/
+
+# external dependencies
+src/ga_lib/extern/
