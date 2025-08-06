@@ -19,7 +19,7 @@ namespace CSA{
         const double ht_subs;
         const double er1;
         const double er2;
-        const int N; 
+        const int num_fs; 
 
         CoupledstripArrangement(
             const double V0, // Potential at the microstrip
@@ -31,7 +31,7 @@ namespace CSA{
             const double ht_subs, // Height of substrate in meters 
             const double er1, // Relative permittivity of air
             const double er2, // Relative permittivity of substrate
-            const int N) // Number of Fourier coefficients
+            const int num_fs) // Number of Fourier coefficients
             : 
             V0(V0),
             space_bw_strps(space_bw_strps), 
@@ -42,7 +42,7 @@ namespace CSA{
             ht_subs(ht_subs), 
             er1(er1), 
             er2(er2), 
-            N(N){}
+            num_fs(num_fs){}
     }; // Struct CSA
 
     /*
@@ -70,7 +70,7 @@ namespace CSA{
         const double& width_micrstr,
         const double& space_bw_strps, 
         const double& hw_arra, 
-        const int& N, 
+        const int& num_fs, 
         const Eigen::ArrayXd& g_left, 
         const Eigen::ArrayXd& x_left,
         const Eigen::ArrayXd& g_right, 
@@ -94,7 +94,7 @@ namespace CSA{
         const double& hw_arra,
         const double& ht_arra,
         const double& ht_subs,
-        const int& N,
+        const int& num_fs,
         Eigen::ArrayXd& vn);
 
 } // Namespace CSA

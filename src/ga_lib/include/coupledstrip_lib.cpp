@@ -67,7 +67,7 @@ namespace CSA{
         const double& width_micrstr,
         const double& space_bw_strps, 
         const double& hw_arra, 
-        const int& N, 
+        const int& num_fs, 
         const Eigen::ArrayXd& g_left, 
         const Eigen::ArrayXd& x_left,
         const Eigen::ArrayXd& g_right, 
@@ -90,9 +90,9 @@ namespace CSA{
             double N = g_right.size();
             double d = space_bw_strps/2;
 
-            Eigen::ArrayXd n = (Eigen::ArrayXd::LinSpaced(N, 1, N)); // Nx1
+            Eigen::ArrayXd n = (Eigen::ArrayXd::LinSpaced(num_fs, 1, num_fs)); // nx1
 
-            Eigen::ArrayXd alpha = n*PI/hw_arra; // Nx1
+            Eigen::ArrayXd alpha = n*PI/hw_arra; // nx1
 
             Eigen::ArrayXd m = (g_left.bottomRows(M-1) - g_left.topRows(M-1)) /
                             (x_left.bottomRows(M-1) - x_left.topRows(M-1)); // M-1x1
@@ -103,28 +103,77 @@ namespace CSA{
 
             // vn1
             //=========================
+            Eigen::ArrayXd sin_left = (alpha.matrix() * x_left.bottomRows(M-1).matrix().transpose()).array().sin()
+                                        - (alpha.matrix() * x_left.topRows(M-1).matrix().transpose()).array().sin(); // nx1 x 1xM-1 = nxM-1
+            Eigen::ArrayXd vn1 = (1/alpha.square())*(
+                (sin_left.matrix() * m.matrix()).array()
+            ); // nx1 x (nxM-1 x M-1x1) = nx1
 
             // vn2
             //=========================
+            Eigen::ArrayXd vn2 = (1/alpha)*(
+                ( 
+                ((alpha.matrix() * x_left.topRows(M-1).matrix().transpose()).array().cos()).matrix()
+                * g_left.topRows(M-1).matrix()
+                ).array()
+                - ( 
+                ((alpha.matrix() * x_left.bottomRows(M-1).matrix().transpose()).array().cos()).matrix()
+                * g_left.bottomRows(M-1).matrix()
+                ).array()
+            ); // nx1 x (cos(nx1 x 1XM-1) x M-1x1) = nx1
 
             // vn3
             //=========================
+            Eigen::ArrayXd vn3 = (1/alpha)*(
+                (alpha*d).cos() - (alpha*(d+width_micrstr)).cos()
+            ); // nx1
 
             // vn4
             //=========================
+            Eigen::ArrayXd sin_right = (alpha.matrix() * x_right.bottomRows(N-1).matrix().transpose()).array().sin()
+                                        - (alpha.matrix() * x_right.topRows(N-1).matrix().transpose()).array().sin(); // nx1 x 1xM-1 = nxM-1
+            Eigen::ArrayXd vn4 = (1/alpha.square())*(
+                (sin_right.matrix() * m_prime.matrix()).array()
+            ); // nx1 x (nxN-1 x N-1x1) = nx1
 
             // vn5
             //=========================
+            Eigen::ArrayXd vn5 = (1/alpha)*(
+                ( 
+                ((alpha.matrix() * x_right.topRows(N-1).matrix().transpose()).array().cos()).matrix()
+                * g_right.topRows(N-1).matrix()
+                ).array()
+                - ( 
+                ((alpha.matrix() * x_right.bottomRows(N-1).matrix().transpose()).array().cos()).matrix()
+                * g_right.bottomRows(N-1).matrix()
+                ).array()
+            ); // nx1 x (cos(nx1 x 1XN-1) x M-1x1) = nx1
 
+            Eigen::ArrayXd vn = outer_coeff*(vn1+vn2+vn3+vn4+vn5);
 
-
-
+            return vn; // nx1
         }
     
     Eigen::ArrayXd calculate_potential(const double& hw_arra,
         Eigen::ArrayXd& vn, 
         std::vector<double>& x){
+            // Input potential coefficients must not be empty
+            if(vn.rows() == 0){
+                throw std::invalid_argument("Potenntial coefficients vn is empty");
+            } 
 
+            size_t num_fs = vn.size();
+            Eigen::ArrayXd n = (Eigen::ArrayXd::LinSpaced(num_fs, 1, num_fs)); // nx1
+
+            Eigen::ArrayXd alpha = n*PI/hw_arra; // nx1
+
+            Eigen::MatrixXd x_vals = Eigen::Map<const Eigen::MatrixXd>(x.data(), x.size(), 1); // Mx1
+
+            Eigen::ArrayXd sin = (x_vals * alpha.matrix().transpose()).array().sin(); // Mx1 x 1xn =  Mxn
+
+            Eigen::ArrayXd VF = (sin.matrix() * vn.matrix()).array(); // Mxn x nx1 = Mx1
+
+            return VF;
         }
 
     /*
@@ -145,7 +194,7 @@ namespace CSA{
         const double& hw_arra,
         const double& ht_arra,
         const double& ht_subs,
-        const int& N,
+        const int& num_fs,
         Eigen::ArrayXd& vn){
 
         }
