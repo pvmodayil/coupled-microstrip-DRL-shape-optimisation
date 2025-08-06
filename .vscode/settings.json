@@ -1,0 +1,8 @@
+{
+    "cmake.sourceDirectory": "C:/Users/pvmod/InformationProcessingLab/02_ShapeOptimisation_CoupledStrips/coupled-microstrip-DRL-shape-optimisation/src/ga_lib",
+    "glassit.alpha": 240,
+    "files.associations": {
+        "stdexcept": "cpp",
+        "numbers": "cpp"
+    }
+}
