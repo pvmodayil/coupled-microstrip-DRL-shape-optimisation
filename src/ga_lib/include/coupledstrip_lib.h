@@ -56,10 +56,10 @@ namespace CSA{
         Increasing
     };
     
-    bool is_monotone(const std::vector<double>& g, MonotoneType curve_type);
+    bool is_monotone(const Eigen::ArrayXd& g, MonotoneType curve_type);
 
     // Function to check whether the curve is convex
-    bool is_convex(const std::vector<double>& g);
+    bool is_convex(const Eigen::ArrayXd& g);
 
     /*
     *******************************************************

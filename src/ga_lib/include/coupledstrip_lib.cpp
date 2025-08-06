@@ -1,0 +1,153 @@
+// Include the header for this source file
+#include "coupledstrip_lib.h"
+
+#include <numbers>
+#include <stdexcept>
+#include <format>
+
+/*
+*******************************************************
+*                      Constants                      *
+*******************************************************
+*/
+constexpr double PI = std::numbers::pi;
+
+namespace CSA{
+    /*
+    *******************************************************
+    *            Necessary Conditons Chheck               *
+    *******************************************************
+    */
+    // Function to check whether the curve is monotone decreasing or increasing    
+    bool is_monotone(const Eigen::ArrayXd& g, MonotoneType curve_type){
+        size_t m = g.size(); // Size of the curve
+
+        if (m < 2){
+            throw std::invalid_argument("Not enough spline knots for further processing");
+        }
+
+        if (curve_type == MonotoneType::Decreasing){
+            return (g.tail(m-1) <= g.head(m-1)).all();
+        }
+        else if (curve_type == MonotoneType::Increasing){
+            return (g.tail(m-1) >= g.head(m-1)).all();
+        }
+        else {
+            throw std::invalid_argument("Invalid monotonicity type");
+        }
+
+    }
+
+    // Function to check whether the curve is convex
+    bool is_convex(const Eigen::ArrayXd& g){
+        size_t m = g.size();
+
+        // Check if the vector has at least 3 elemen
+        if (m < 3) {
+            throw std::invalid_argument("Not enough spline knots for further processing");
+        }
+
+        // Calculate the second differences
+        Eigen::ArrayXd dx2(m - 2);
+        // segment(start idx, length)
+        dx2 = g.segment(2, m-2) 
+            - 2.0 * g.segment(1, m-2) 
+            + g.segment(0, m-2);
+
+        // Check if all second differences are non-negative
+        return (dx2 >= 0).all();
+    }
+
+    /*
+    *******************************************************
+    *            Potential & Potential Coeffs             *
+    *******************************************************
+    */
+    Eigen::ArrayXd calculate_potential_coeffs(const double& V0,
+        const double& width_micrstr,
+        const double& space_bw_strps, 
+        const double& hw_arra, 
+        const int& N, 
+        const Eigen::ArrayXd& g_left, 
+        const Eigen::ArrayXd& x_left,
+        const Eigen::ArrayXd& g_right, 
+        const Eigen::ArrayXd& x_right){
+            // Validate arguments
+            //============================
+            if (g_left.size() != x_left.size()){
+                throw std::invalid_argument(std::format("Dimensions of x-axis vector and g-point vector for left side do not match! g: {}, x: {}", 
+                    g_left.size(), x_left.size()));
+            }
+
+            if (g_right.size() != x_right.size()){
+                throw std::invalid_argument(std::format("Dimensions of x-axis vector and g-point vector for right side do not match! g: {}, x: {}", 
+                    g_right.size(), x_right.size()));
+            }
+
+            // Repeating or Constant terms
+            //============================
+            double M = g_left.size();
+            double N = g_right.size();
+            double d = space_bw_strps/2;
+
+            Eigen::ArrayXd n = (Eigen::ArrayXd::LinSpaced(N, 1, N)); // Nx1
+
+            Eigen::ArrayXd alpha = n*PI/hw_arra; // Nx1
+
+            Eigen::ArrayXd m = (g_left.bottomRows(M-1) - g_left.topRows(M-1)) /
+                            (x_left.bottomRows(M-1) - x_left.topRows(M-1)); // M-1x1
+            Eigen::ArrayXd m_prime = (g_right.bottomRows(N-1) - g_right.topRows(N-1)) /
+                            (x_right.bottomRows(N-1) - x_right.topRows(N-1)); // N-1x1
+
+            double outer_coeff = 2*V0/hw_arra;
+
+            // vn1
+            //=========================
+
+            // vn2
+            //=========================
+
+            // vn3
+            //=========================
+
+            // vn4
+            //=========================
+
+            // vn5
+            //=========================
+
+
+
+
+        }
+    
+    Eigen::ArrayXd calculate_potential(const double& hw_arra,
+        Eigen::ArrayXd& vn, 
+        std::vector<double>& x){
+
+        }
+
+    /*
+    *******************************************************
+    *                      Energy                         *
+    *******************************************************
+    */
+   Eigen::ArrayXd logsinh(const Eigen::ArrayXd& vector){
+
+   }
+
+    Eigen::ArrayXd logcosh(const Eigen::ArrayXd& vector){
+
+    }
+
+    double calculate_energy(const double& er1,
+        const double& er2,
+        const double& hw_arra,
+        const double& ht_arra,
+        const double& ht_subs,
+        const int& N,
+        Eigen::ArrayXd& vn){
+
+        }
+
+} // namespace CSA
