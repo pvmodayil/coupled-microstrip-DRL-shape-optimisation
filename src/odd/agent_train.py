@@ -199,10 +199,10 @@ def main(CSA: CoupledStripArrangement) -> None:
     env_type: str = "caseL" if CSA.er2 == 1.0 else "caseD"
     
     cwd: str = os.getcwd()  
-    model_dir: str = os.path.join(cwd,"training",env_type,"models") # training/env_type/models
-    log_dir: str = os.path.join(cwd,"training",env_type,"logs") # training/env_type/logs
-    image_dir: str = os.path.join(cwd,"training",env_type,"images") # training/env_type/images
-    intermediate_pred_dir: str = os.path.join(cwd,"training",env_type,"intermediate_prediction") # training/env_type/intermediate_prediction
+    model_dir: str = os.path.join(cwd,"training",CSA.mode,env_type,"models") # training/mode/env_type/models
+    log_dir: str = os.path.join(cwd,"training",CSA.mode,env_type,"logs") # training/mode/env_type/logs
+    image_dir: str = os.path.join(cwd,"training",CSA.mode,env_type,"images") # training/mode/env_type/images
+    intermediate_pred_dir: str = os.path.join(cwd,"training",CSA.mode,env_type,"intermediate_prediction") # training/mode/env_type/intermediate_prediction
     create_directories(mdirRoot=model_dir, 
                     ldirRoot=log_dir, 
                     idirRoot=image_dir, 
@@ -253,6 +253,7 @@ if __name__ == "__main__":
         er1=1.0, # dielectric constatnt for medium 1
         er2=4.5, # dielctric constant for medium 2
         num_fs=2000, # number of fourier series coefficients
-        num_pts=100 # number of points for the piece wise linear approaximation
+        num_pts=100, # number of points for the piece wise linear approaximation
+        mode="Odd"
     )
     main(CSA=CSA)

@@ -13,3 +13,4 @@ class CoupledStripArrangement:
     er2: float # dielctric constant for medium 2
     num_fs: int # number of fourier series coefficients
     num_pts: int # number of points for the piece wise linear approaximation
+    mode: str # Even or Odd mode
