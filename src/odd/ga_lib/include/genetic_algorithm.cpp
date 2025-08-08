@@ -5,3 +5,307 @@
 #include <random>
 #include <iostream>
 #include <stdexcept>
+#include <format>
+
+void printProgressBar(int total, int current) {
+    constexpr int bar_width = 20; // Width of the progress bar
+    float progress = static_cast<float>(current) / total;
+
+    std::cout << "[";
+    int pos = static_cast<int>(bar_width * progress);
+    for (int i = 0; i < bar_width; ++i) {
+        if (i < pos) std::cout << "=";
+        else if (i == pos) std::cout << ">";
+        else std::cout << " ";
+    }
+    std::cout << "] " << static_cast<int>(progress * 100.0f) << "%\r"; // \r returns cursor to the beginning of the line
+    std::cout.flush(); // Ensure the output is printed immediately
+}
+
+namespace GA{
+    /*
+    *******************************************************
+    *                      Constructor                    *
+    *******************************************************
+    */
+    GeneticAlgorithm::GeneticAlgorithm(CSA::CoupledstripArrangement& arrangement,
+        Eigen::ArrayXd g_left_start,
+        Eigen::ArrayXd x_left_start,
+        Eigen::ArrayXd g_right_start,
+        Eigen::ArrayXd x_right_start, 
+        int population_size, 
+        int num_generations, 
+        double mutation_rate)
+        : 
+        arrangement(arrangement),
+        g_left_start(g_left_start),
+        x_left_start(x_left_start), 
+        g_right_start(g_right_start),
+        x_right_start(x_right_start), 
+        population_size(population_size), 
+        num_generations(num_generations), 
+        mutation_rate(mutation_rate) {
+            #pragma omp parallel
+            {
+                #pragma omp single
+                {
+                    rng_engines.resize(omp_get_num_threads());
+                }
+
+                int tid = omp_get_thread_num();
+                std::seed_seq seed{std::random_device{}(), static_cast<unsigned int>(tid)};
+                rng_engines[tid] = std::mt19937(seed);
+            }
+            parent_index_dist = std::uniform_int_distribution<>(0, population_size - 1);
+        }
+    
+    /*
+    *******************************************************
+    *               Initial Population                    *
+    *******************************************************
+    */
+    void GeneticAlgorithm::initialize_population(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, double& noise_scale){
+        
+        // Vector size (with the expectation that left and right side have same size)
+        size_t vector_size = g_left_start.size();
+
+        // Random uniform distribution between -1 to 1 scaled to 0 to 1 and further scaled to create random noise
+        Eigen::MatrixXd random_noise_left = (
+            (noise_scale * 
+                0.5 * (Eigen::MatrixXd::Ones(vector_size, population_size) + Eigen::MatrixXd::Random(vector_size, population_size))
+            ).array() * population_left.array()
+        ).matrix();
+
+        Eigen::MatrixXd random_noise_right = (
+            (noise_scale * 
+                0.5 * (Eigen::MatrixXd::Ones(vector_size, population_size) + Eigen::MatrixXd::Random(vector_size, population_size))
+            ).array() * population_right.array()
+        ).matrix();
+
+        // Add noise to create the initial population
+        population_left.noalias() += random_noise_left;
+        population_right.noalias() += random_noise_right;
+
+        // Limit the initial population within the boundary(0 to 1, as the curves are always scaled to be in this range)
+        population_left = population_left.array().min(1).max(0).matrix();
+        population_right = population_right.array().min(1).max(0).matrix();
+
+    }
+
+    /*
+    *******************************************************
+    *                 Fitness Operator                    *
+    *******************************************************
+    */
+    double GeneticAlgorithm::calculate_fitness(Eigen::ArrayXd& individual_left,Eigen::ArrayXd& individual_right){
+        // Vector size (with the expectation that left and right side have same size)
+        size_t vector_size = individual_left.size();
+
+        // Since the entire curve is given for the crossover make sure the boundary values are correct
+        individual_left(0) = 0.0;
+        individual_left(vector_size-1) = 1.0;
+        individual_right(0) = 1.0;
+        individual_right(vector_size-1) = 0.0;
+        
+        // Check for necessary condition
+        if (!CSA::is_monotone(individual_left,CSA::MonotoneType::Increasing) || !CSA::is_monotone(individual_right,CSA::MonotoneType::Decreasing)){
+            return 100.0; // high energy value since necessary condition failed
+        }
+
+        // Energy calculation
+        Eigen::ArrayXd vn = CSA::calculate_potential_coeffs(arrangement.V0,
+            arrangement.width_micrstr,
+            arrangement.space_bw_strps,
+            arrangement.hw_arra,
+            arrangement.num_fs,
+            individual_left,
+            x_left_start,
+            individual_right,
+            x_right_start);
+
+        return CSA::calculate_energy(arrangement.er1,
+            arrangement.er2,
+            arrangement.hw_arra,
+            arrangement.ht_arra,
+            arrangement.ht_subs,
+            arrangement.num_fs,
+            vn);
+    }
+    
+    /*
+    *******************************************************
+    *                 Parent Selection                    *
+    *******************************************************
+    */
+    size_t GeneticAlgorithm::select_parent(const Eigen::ArrayXd& fitness_array, const int& thread_id) {
+        // Tournament selection with size 2
+        size_t candidate_index1;
+        size_t candidate_index2;
+
+        // Do tournament selection
+        std::mt19937& rng = rng_engines[thread_id];
+        candidate_index1 = parent_index_dist(rng);
+        candidate_index2 = parent_index_dist(rng);
+
+        if (fitness_array[candidate_index2] < fitness_array[candidate_index1]) {
+            std::swap(candidate_index1, candidate_index2);
+        }
+
+        return candidate_index1;
+    }
+
+    /*
+    *******************************************************
+    *                    SBX Crossover                    *
+    *******************************************************
+    */
+    void GeneticAlgorithm::crossover(Eigen::VectorXd& parent1, Eigen::VectorXd& parent2, Eigen::Ref<Eigen::VectorXd> child1, Eigen::Ref<Eigen::VectorXd> child2, double eta){
+        
+        size_t parent_size = parent1.size();
+        double exponent = 1.0 / (eta + 1.0);
+
+        // Generate a vector of random numbers
+        Eigen::ArrayXd u = 0.5 * (Eigen::ArrayXd::Random(parent_size) + 1); // Random numbers between 0 and 1
+
+        // The following arithmetic has 1.0 - u in the denominator and hence it is important that u never has 1.0 as value
+        double epsilon = std::numeric_limits<double>::epsilon();
+        u = u.cwiseMax(epsilon).cwiseMin(1.0 - epsilon); // Ensure u is not 1.0 or 0.0
+
+        Eigen::ArrayXd beta(u.size());
+        Eigen::Array<bool, Eigen::Dynamic, 1> mask = (u <= 0.5); // mask array
+        // Compute both cases for the mask
+        Eigen::ArrayXd beta_case_ulessthan  = (2.0 * u).pow(exponent);
+        Eigen::ArrayXd beta_case_umorethan = (1.0 / (2.0 * (1.0 - u))).pow(exponent);
+        beta = mask.select(beta_case_ulessthan, beta_case_umorethan);
+
+        // Calculate children
+        child1 = 0.5 * ((1.0 + beta) * parent1.array() + (1.0 - beta) * parent2.array()).matrix();
+        child2 = 0.5 * ((1.0 - beta) * parent1.array() + (1.0 + beta) * parent2.array()).matrix();
+    }
+
+    /*
+    *******************************************************
+    *                     Reproduction                    *
+    *******************************************************
+    */
+    void GeneticAlgorithm::reproduce(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, Eigen::ArrayXd& fitness_array, double& noise_scale){
+        // Vector size (with the expectation that left and right side have same size)
+        size_t vector_size = g_left_start.size();
+
+        // Create a random noise scaled matrix for mutation
+        Eigen::MatrixXd new_population_left(vector_size, population_size);
+        Eigen::MatrixXd new_population_right(vector_size, population_size);
+        
+        #pragma omp parallel for
+        for (int i=0; i<population_size; i+=2){
+            // Get the thread id for random number generation
+            int thread_id = omp_get_thread_num();
+            // Select the parents using tournament selection
+            Eigen::VectorXd parent1_left = population_left.col(select_parent(fitness_array,thread_id));
+            Eigen::VectorXd parent2_left = population_left.col(select_parent(fitness_array,thread_id));
+
+            Eigen::VectorXd parent1_right = population_right.col(select_parent(fitness_array,thread_id));
+            Eigen::VectorXd parent2_right = population_right.col(select_parent(fitness_array,thread_id));
+            
+            // Crossover with SBX crossover
+            crossover(parent1_left,parent2_left,new_population_left.col(i),new_population_left.col(i+1)); 
+            crossover(parent1_right,parent2_right,new_population_right.col(i),new_population_right.col(i+1));
+
+        }
+
+        // Limit the initial population within the boundary(0 to 1, as the curves are always scaled to be in this range)
+        new_population_left = new_population_left.array().min(1).max(0).matrix();
+        new_population_right = new_population_right.array().min(1).max(0).matrix();
+        
+        // Reset the values of population with new population
+        population_left = new_population_left;
+        population_right = new_population_right;
+    }
+
+    /*
+    *******************************************************
+    *              Main Optimisation Function             *
+    *******************************************************
+    */
+    void GeneticAlgorithm::optimize(double& noise_scale, GAResult& result){
+        size_t best_index = 0;
+        double best_energy = 0.0;
+        double previous_energy = result.best_energy;
+        
+        // Need the length for further processing
+        size_t g_left_size = g_left_start.size();
+        size_t g_right_size = g_right_start.size();
+        
+        // Engineer in the requirement for same number of coordinates
+        if (g_left_size != g_right_size){
+            throw std::invalid_argument(std::format("For efficient processing of GA optimisation,\
+                the algorithm expects both left and right sides to ahve same number of coordinates.\
+                g_left: {}, g_right: {}", 
+                g_left_size, g_right_size));
+        }
+
+        // Vector size (with the expectation that left and right side have same size)
+        size_t vector_size = g_left_size;
+
+        // Create an initial population matrix and fitness array
+        // Map the vector and create a matrix where each column is a copy of the starting curve
+        Eigen::MatrixXd population_left = g_left_start.replicate(1, population_size);
+        Eigen::MatrixXd population_right = g_right_start.replicate(1, population_size);
+        
+        // Add random noise and initialize the population for left and right sides
+        initialize_population(population_left,population_right,noise_scale);
+        // Array to hold fitness value corresponding to the individual in the population
+        Eigen::ArrayXd fitness_array = Eigen::ArrayXd(population_size);
+
+        // Iterate for num_generations steps
+        for(size_t generation=1; generation<num_generations+1; ++generation){
+            printProgressBar(num_generations, generation);
+
+            // Fitness calculation
+            #pragma omp parallel for
+            for(int i=0; i<population_size; ++i){
+                Eigen::ArrayXd individual_left = population_left.col(i).array();
+                Eigen::ArrayXd individual_right = population_right.col(i).array();
+                fitness_array[i] = calculate_fitness(individual_left,individual_right);
+            }
+
+            // Keep track
+            best_energy = fitness_array.minCoeff(); // Get the best energy of the generation
+            result.energy_convergence(generation) = best_energy; // Store the best energy of the generation
+            
+            if (generation%200 == 0){
+                // Check for convergence
+                if (std::abs(previous_energy - best_energy) < previous_energy*1e-3){
+                    std::cout << "Converged at generation " << generation << "\n";
+                    break;
+                }
+                previous_energy = best_energy; // Update the previous energy
+            }
+            // Reproduce
+            reproduce(population_left, population_right, fitness_array, noise_scale);
+        }
+
+        // Final population fitness calculation
+        #pragma omp parallel for
+        for(int i=0; i<population_size; ++i){
+            Eigen::ArrayXd individual_left = population_left.col(i).array();
+            Eigen::ArrayXd individual_right = population_right.col(i).array();
+            fitness_array[i] = calculate_fitness(individual_left,individual_right);
+        }
+
+        // Optimized curve and metrics
+        best_energy = fitness_array.minCoeff(&best_index); // Get the best energy of the last generation
+        
+        result.best_curve_left = population_left.col(best_index); // Store the best curve of the last generation
+        result.best_curve_left(0) = 0.0;
+        result.best_curve_left(vector_size-1) = 1.0;
+
+        result.best_curve_right = population_right.col(best_index);
+        result.best_curve_right(0) = 1.0;
+        result.best_curve_right(vector_size-1) = 0.0;
+
+        result.best_energy = best_energy; // Store the best energy of the last generation
+    }
+    
+
+} // end of namespace

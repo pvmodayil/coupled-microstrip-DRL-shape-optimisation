@@ -12,11 +12,12 @@ namespace GA{
     // Result struct
     struct GAResult {
         Eigen::ArrayXd energy_convergence;
-        Eigen::ArrayXd best_curve;
+        Eigen::ArrayXd best_curve_left;
+        Eigen::ArrayXd best_curve_right;
         double best_energy;
 
-        GAResult(Eigen::ArrayXd energy_convergence, Eigen::VectorXd best_curve, double best_energy)
-            : energy_convergence(energy_convergence), best_curve(best_curve), best_energy(best_energy) {}
+        GAResult(Eigen::ArrayXd energy_convergence, Eigen::VectorXd best_curve_left, Eigen::VectorXd best_curve_right, double best_energy)
+            : energy_convergence(energy_convergence), best_curve_left(best_curve_left), best_curve_right(best_curve_right), best_energy(best_energy) {}
     };
     
     // Genetic Algorithm Class
@@ -24,8 +25,10 @@ namespace GA{
         private:
             // GA Properties
             // ------------------------------------------------------
-            Eigen::ArrayXd starting_curveY;
-            Eigen::ArrayXd starting_curveX;
+            Eigen::ArrayXd g_left_start;
+            Eigen::ArrayXd x_left_start;
+            Eigen::ArrayXd g_right_start;
+            Eigen::ArrayXd x_right_start;
             int population_size;
             int num_generations;
             double mutation_rate;
@@ -38,16 +41,15 @@ namespace GA{
             
             // Functions
             // ------------------------------------------------------
-            Eigen::MatrixXd initialize_population(double& noise_scale);
+            void initialize_population(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, double& noise_scale);
 
-            double calculate_fitness(Eigen::ArrayXd& individual);
+            double calculate_fitness(Eigen::ArrayXd& individual_left,Eigen::ArrayXd& individual_right);
             
             // Parent selection  
-            size_t select_elites(const Eigen::ArrayXd& fitness_array);
             size_t select_parent(const Eigen::ArrayXd& fitness_array, const int& thread_id);
 
             // Reproduction
-            Eigen::MatrixXd reproduce(Eigen::MatrixXd& population, Eigen::ArrayXd& fitness_array, double& noise_scale);
+            void reproduce(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, Eigen::ArrayXd& fitness_array, double& noise_scale);
             void crossover(Eigen::VectorXd& parent1, 
                 Eigen::VectorXd& parent2, 
                 Eigen::Ref<Eigen::VectorXd> child1, 
@@ -57,8 +59,10 @@ namespace GA{
         public:
             // Constructor
             GeneticAlgorithm(CSA::CoupledstripArrangement& arrangement, 
-                Eigen::ArrayXd& starting_curveY,
-                Eigen::ArrayXd& starting_curveX, 
+                Eigen::ArrayXd g_left_start,
+                Eigen::ArrayXd x_left_start,
+                Eigen::ArrayXd g_right_start,
+                Eigen::ArrayXd x_right_start, 
                 int population_size, 
                 int num_generations, 
                 double mutation_rate);
@@ -69,4 +73,5 @@ namespace GA{
     };
 
 } // end of namespace
+
 #endif

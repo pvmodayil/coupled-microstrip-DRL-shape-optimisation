@@ -3,6 +3,7 @@
     "glassit.alpha": 240,
     "files.associations": {
         "stdexcept": "cpp",
-        "numbers": "cpp"
+        "numbers": "cpp",
+        "dense": "cpp"
     }
 }
