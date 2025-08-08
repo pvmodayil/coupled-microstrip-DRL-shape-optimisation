@@ -1,18 +1,21 @@
 #ifndef GENETIC_ALGORITHM_H
 #define GENETIC_ALGORITHM_H
 
+// Includes
 #include "coupledstrip_lib.h"
-#include <Eigen/Dense>
 #include <random>
 #include <omp.h>
+// External includes
+#include <Eigen/Dense>
+
 namespace GA{
     // Result struct
-    struct GeneticResult {
+    struct GAResult {
         Eigen::ArrayXd energy_convergence;
         Eigen::ArrayXd best_curve;
         double best_energy;
 
-        GeneticResult(Eigen::ArrayXd energy_convergence, Eigen::VectorXd best_curve, double best_energy)
+        GAResult(Eigen::ArrayXd energy_convergence, Eigen::VectorXd best_curve, double best_energy)
             : energy_convergence(energy_convergence), best_curve(best_curve), best_energy(best_energy) {}
     };
     
@@ -61,7 +64,7 @@ namespace GA{
                 double mutation_rate);
             
             // Main function to run the optimization
-            void optimize(double& noise_scale, GeneticResult& result);
+            void optimize(double& noise_scale, GAResult& result);
 
     };
 
