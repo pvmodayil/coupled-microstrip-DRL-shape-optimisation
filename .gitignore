@@ -3,11 +3,11 @@ training/
 training/*
 
 # pycache
-src/odd/_pycache_
-src/odd/utils/_pycache_
+src/odd/__pycache__
+src/odd/utils/__pycache__
 
-src/even/_pycache_
-src/even/utils/_pycache_
+src/even/__pycache__
+src/even/utils/__pycache__
 
 # cpp build folder
 src/odd/ga_lib/build/
