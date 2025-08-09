@@ -159,39 +159,99 @@ def train(env: CoupledStripEnv,
     return model_save_path
 
 def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
+    import coupledstrip_lib as csa_lib
+    
+    # Load model
     model: SAC = SAC.load(model_path)
-    action: NDArray = predict(env,model)
+    
+    # Set Prediction environment and predict (CaseD as it is the default here)
+    ########################################################################
+    actionD: NDArray = predict(env,model)
     
     mid_point: int = int(env.action_space.shape[0]/2)
-    action_left: NDArray = action[:mid_point]
-    action_right: NDArray = action[mid_point:]
+    action_leftD: NDArray = actionD[:mid_point]
+    action_rightD: NDArray = actionD[mid_point:]
     
-    x_left: NDArray
-    g_left: NDArray
+    x_leftD: NDArray
+    g_leftD: NDArray
     _control: NDArray
-    x_left,g_left,_control = env.get_bezier_curve(action=action_left,side='left')
-    x_right: NDArray
-    g_right: NDArray
-    x_right,g_right,_control = env.get_bezier_curve(action=action_right,side='right')
+    x_leftD,g_leftD,_control = env.get_bezier_curve(action=action_leftD,side='left')
+    x_rightD: NDArray
+    g_rightD: NDArray
+    x_rightD,g_rightD,_control = env.get_bezier_curve(action=action_rightD,side='right')
     
     # Create a dictionary to hold the data
-    data: dict[str, NDArray] = {
-        'x_left': x_left,
-        'g_left': g_left,
-        'x_right': x_right,
-        'g_right': g_right
+    dataD: dict[str, NDArray] = {
+        'x_left': x_leftD,
+        'g_left': g_leftD,
+        'x_right': x_rightD,
+        'g_right': g_rightD
     }
 
     # Create DataFrame from the dictionary
-    pd.DataFrame(data).to_excel(os.path.join(image_dir,'predicted_curve.xlsx'), index=False)
+    pd.DataFrame(dataD).to_excel(os.path.join(image_dir,'CaseD_predicted_curve.xlsx'), index=False)
+    plot_curve.plot_potential(x_left=x_leftD,g_left=g_leftD,x_right=x_rightD,g_right=g_rightD,image_dir=image_dir,name="CaseD")
     
-    energy: float = env.calculate_energy(g_left=g_left,
-                                        x_left=x_left,
-                                        g_right=g_right,
-                                        x_right=x_right)
-    logger.info(f"Final predicted energy for the system: {energy} VAs")
-    plot_curve.plot_potential(x_left=x_left,g_left=g_left,x_right=x_right,g_right=g_right,image_dir=image_dir)
+    # Calculate Metrics
+    energyD: float = env.calculate_energy(g_left=g_leftD,
+                                        x_left=x_leftD,
+                                        g_right=g_rightD,
+                                        x_right=x_rightD)
+    logger.info(f"Final predicted energy for the system: {energyD} VAs")
     
+    # Set Prediction environment and predict for CaseL
+    ##################################################
+    env.CSA.er2 = 1.0
+    actionL: NDArray = predict(env,model)
+    
+    mid_point: int = int(env.action_space.shape[0]/2)
+    action_leftL: NDArray = actionL[:mid_point]
+    action_rightL: NDArray = actionL[mid_point:]
+    
+    x_leftL: NDArray
+    g_leftL: NDArray
+    _control: NDArray
+    x_leftL,g_leftL,_control = env.get_bezier_curve(action=action_leftL,side='left')
+    x_rightL: NDArray
+    g_rightL: NDArray
+    x_rightL,g_rightL,_control = env.get_bezier_curve(action=action_rightL,side='right')
+    
+    # Create a dictionary to hold the data
+    dataL: dict[str, NDArray] = {
+        'x_left': x_leftL,
+        'g_left': g_leftL,
+        'x_right': x_rightL,
+        'g_right': g_rightL
+    }
+
+    # Create DataFrame from the dictionary
+    pd.DataFrame(dataL).to_excel(os.path.join(image_dir,'CaseL_predicted_curve.xlsx'), index=False)
+    plot_curve.plot_potential(x_left=x_leftL,g_left=g_leftL,x_right=x_rightL,g_right=g_rightL,image_dir=image_dir,name="CaseL")
+    
+    # Calculate Metrics
+    energyL: float = env.calculate_energy(g_left=g_leftL,
+                                        x_left=x_leftL,
+                                        g_right=g_rightL,
+                                        x_right=x_rightL)
+    logger.info(f"Final predicted energy for the system: {energyL} VAs")
+    
+    # Calculate Capacitance, Impedance and Epsilon Eff
+    CD: float = csa_lib.calculate_capacitance(V0=env.CSA.V0,W=energyD) 
+    CL: float = csa_lib.calculate_capacitance(V0=env.CSA.V0,W=energyL) 
+    
+    ZD: float = csa_lib.calculate_impedance(cD=CD,cL=CL,env="caseD")
+    ZL: float = csa_lib.calculate_impedance(cD=CD,cL=CL,env="caseL")
+    
+    epsEff: float = csa_lib.calculate_epsilonEff(cD=CD,cL=CL)
+    
+    metrics_data = {
+        CD: CD,
+        CL: CL,
+        ZD: ZD,
+        ZL: ZL,
+        epsEff: epsEff
+    }
+    pd.DataFrame(metrics_data).to_excel(os.path.join(image_dir,'prediction_metrics.xlsx'), index=False)
 # main called function
 ######################      
 def main(CSA: CoupledStripArrangement) -> None:
