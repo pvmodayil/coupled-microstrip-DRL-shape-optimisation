@@ -245,11 +245,8 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     epsEff: float = csa_lib.calculate_epsilonEff(cD=CD,cL=CL)
     
     metrics_data = {
-        "CD": CD,
-        "CL": CL,
-        "ZD": ZD,
-        "ZL": ZL,
-        "epsEff": epsEff
+        "metrics": ['CD','CL','ZD','ZL','epsEff'],
+        "value": [CD,CL,ZD,ZL,epsEff]
     }
     pd.DataFrame(metrics_data).to_excel(os.path.join(image_dir,'prediction_metrics.xlsx'), index=False)
 # main called function
