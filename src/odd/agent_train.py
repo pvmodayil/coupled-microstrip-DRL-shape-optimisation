@@ -310,7 +310,7 @@ if __name__ == "__main__":
         er1=1.0, # dielectric constatnt for medium 1
         er2=4.5, # dielctric constant for medium 2
         num_fs=2000, # number of fourier series coefficients
-        num_pts=100, # number of points for the piece wise linear approaximation
+        num_pts=50, # number of points for the piece wise linear approaximation
         mode="Odd"
     )
     main(CSA=CSA)
