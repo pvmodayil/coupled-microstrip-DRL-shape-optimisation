@@ -237,7 +237,7 @@ namespace GA{
         // Engineer in the requirement for same number of coordinates
         if (g_left_size != g_right_size){
             throw std::invalid_argument(std::format("For efficient processing of GA optimisation,\
-                the algorithm expects both left and right sides to ahve same number of coordinates.\
+                the algorithm expects both left and right sides to have same number of coordinates.\
                 g_left: {}, g_right: {}", 
                 g_left_size, g_right_size));
         }
