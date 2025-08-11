@@ -48,6 +48,7 @@ namespace GA{
             size_t select_parent(const Eigen::ArrayXd& fitness_array, const int& thread_id);
 
             // Reproduction
+            Eigen::VectorXi select_elites(Eigen::ArrayXd& fitness_array, size_t elite_size);
             void reproduce(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, Eigen::ArrayXd& fitness_array, double& noise_scale);
             void crossover(Eigen::VectorXd& parent1, 
                 Eigen::VectorXd& parent2, 

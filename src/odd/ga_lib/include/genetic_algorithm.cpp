@@ -189,6 +189,21 @@ namespace GA{
     *                     Reproduction                    *
     *******************************************************
     */
+    Eigen::VectorXi select_elites(Eigen::ArrayXd& fitness_array, size_t elite_size){
+        Eigen::VectorXi sorted_idx = Eigen::VectorXi::LinSpaced(fitness_array.size(), 0, fitness_array.size()-1);
+
+        // Minimisation problem
+        std::partial_sort(sorted_idx.data(),
+                      sorted_idx.data() + elite_size,
+                      sorted_idx.data() + sorted_idx.size(),
+                      [&](int a, int b) { return fitness_array(a) < fitness_array(b); });
+        return sorted_idx.head(elite_size);
+    }
+    /*
+    *******************************************************
+    *                     Reproduction                    *
+    *******************************************************
+    */
     void GeneticAlgorithm::reproduce(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, Eigen::ArrayXd& fitness_array, double& noise_scale){
         // Vector size (with the expectation that left and right side have same size)
         size_t vector_size = g_left_start.size();
@@ -197,8 +212,16 @@ namespace GA{
         Eigen::MatrixXd new_population_left(vector_size, population_size);
         Eigen::MatrixXd new_population_right(vector_size, population_size);
         
+        // Select Elites
+        constexpr size_t elite_size = 10;
+        Eigen::VectorXi elite_idx = select_elites(fitness_array, elite_size);
+
+        // Retain Elites
+        new_population_left.leftCols(elite_size)  = population_left(Eigen::all, elite_idx);
+        new_population_right.leftCols(elite_size) = population_right(Eigen::all, elite_idx);
+
         #pragma omp parallel for
-        for (int i=0; i<population_size; i+=2){
+        for (int i=elite_size; i<population_size; i+=2){
             // Get the thread id for random number generation
             int thread_id = omp_get_thread_num();
             // Select the parents using tournament selection
