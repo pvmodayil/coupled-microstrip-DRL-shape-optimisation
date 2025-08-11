@@ -107,7 +107,7 @@ namespace GA{
         
         // Check for necessary condition
         if (!CSA::is_monotone(individual_left,CSA::MonotoneType::Increasing) || !CSA::is_monotone(individual_right,CSA::MonotoneType::Decreasing)){
-            return 100.0; // high energy value since necessary condition failed
+            return CSA::degree_monotone(individual_left, individual_right); // high energy value since necessary condition failed
         }
 
         // Energy calculation
@@ -136,17 +136,20 @@ namespace GA{
     *******************************************************
     */
     size_t GeneticAlgorithm::select_parent(const Eigen::ArrayXd& fitness_array, const int& thread_id) {
-        // Tournament selection with size 2
+        // Tournament selection with size 4
         size_t candidate_index1;
         size_t candidate_index2;
 
         // Do tournament selection
         std::mt19937& rng = rng_engines[thread_id];
         candidate_index1 = parent_index_dist(rng);
-        candidate_index2 = parent_index_dist(rng);
 
-        if (fitness_array[candidate_index2] < fitness_array[candidate_index1]) {
-            std::swap(candidate_index1, candidate_index2);
+        for (int i : {1,2,3,4}){
+            candidate_index2 = parent_index_dist(rng);
+
+            if (fitness_array[candidate_index2] < fitness_array[candidate_index1]) {
+                std::swap(candidate_index1, candidate_index2);
+            }
         }
 
         return candidate_index1;

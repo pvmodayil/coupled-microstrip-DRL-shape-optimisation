@@ -39,6 +39,19 @@ namespace CSA{
 
     }
 
+    // Function to return degree of monotonicity
+    double degree_monotone(const Eigen::ArrayXd& g_left, const Eigen::ArrayXd& g_right){
+        size_t m = g_left.size();
+        Eigen::ArrayXd dx_left = g_left.bottomRows(m-1) - g_left.topRows(m-1);
+
+        m = g_right.size();
+        Eigen::ArrayXd dx_right = g_right.bottomRows(m-1) - g_right.topRows(m-1);
+
+        double degree =  2*m - 0.5*((dx_left > 0).count() + (dx_right < 0).count()); // Shouldnt be zero
+
+        return degree;
+    }
+
     // Function to check whether the curve is convex
     bool is_convex(const Eigen::ArrayXd& g){
         size_t m = g.size();

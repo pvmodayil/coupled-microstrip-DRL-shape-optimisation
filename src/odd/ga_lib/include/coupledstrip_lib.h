@@ -61,6 +61,9 @@ namespace CSA{
     // Function to check whether the curve is convex
     bool is_convex(const Eigen::ArrayXd& g);
 
+    // Function to return degree of monotonicity
+    double degree_monotone(const Eigen::ArrayXd& g_left, const Eigen::ArrayXd& g_right);
+
     /*
     *******************************************************
     *            Potential & Potential Coeffs             *
