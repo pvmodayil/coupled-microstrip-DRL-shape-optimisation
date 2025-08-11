@@ -15,8 +15,9 @@ import matplotlib.pyplot as plt
 
 def plot_potential(x_left: NDArray, g_left: NDArray, 
                    x_right: NDArray, g_right: NDArray,
-                   image_dir: str) -> None:
-    image_path: str = os.path.join(image_dir,'predicted_curve.png')
+                   image_dir: str,
+                   name: str) -> None:
+    image_path: str = os.path.join(image_dir,f'{name}_predicted_curve.png')
     plt.figure(figsize=(15,10))
     plt.plot(x_left*1000, g_left, color = 'green',label='_nolabel')
     plt.plot(np.array([x_left[-1],x_right[0]])*1000, [1,1], color = 'green',label='_nolabel') # simulate the microstrip region

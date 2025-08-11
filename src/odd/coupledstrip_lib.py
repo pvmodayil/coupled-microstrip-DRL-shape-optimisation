@@ -18,7 +18,7 @@ from numpy.typing import NDArray
 ######################################################################################
 #                            Couple Strip Arrangement
 ######################################################################################
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class CoupledStripArrangement:
     V0: float # Potential of the sytem, used to scale the system which is defaulted at V0=1.0
     hw_arra: float # half width of the arrangement, parameter a
