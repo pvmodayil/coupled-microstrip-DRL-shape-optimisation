@@ -16,3 +16,6 @@ src/even/ga_lib/build/
 # external dependencies
 src/odd/ga_lib/extern/
 src/even/ga_lib/extern/
+
+# data folder
+src/odd/ga_lib/data/
