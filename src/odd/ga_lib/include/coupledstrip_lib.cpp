@@ -237,7 +237,7 @@ namespace CSA{
         //=========
         Eigen::ArrayXd theta2 = alpha*ht_subs; // nx1
         Eigen::ArrayXd coth2 = (logcosh(theta2) - logsinh(theta2)).exp();
-        double w2 = e2 * coeff.matrix().dot(coth1.matrix()); // nx1 . nx1 = 1
+        double w2 = e2 * coeff.matrix().dot(coth2.matrix()); // nx1 . nx1 = 1
 
         double w12 = w1 + w2;
 
