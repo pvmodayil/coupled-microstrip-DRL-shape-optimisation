@@ -271,14 +271,14 @@ namespace GA{
             best_energy = fitness_array.minCoeff(); // Get the best energy of the generation
             result.energy_convergence(generation) = best_energy; // Store the best energy of the generation
             
-            if (generation%200 == 0){
-                // Check for convergence
-                if (std::abs(previous_energy - best_energy) < previous_energy*1e-3){
-                    std::cout << "Converged at generation " << generation << "\n";
-                    break;
-                }
-                previous_energy = best_energy; // Update the previous energy
-            }
+            // if (generation%200 == 0){
+            //     // Check for convergence
+            //     if (std::abs(previous_energy - best_energy) < previous_energy*1e-3){
+            //         std::cout << "Converged at generation " << generation << "\n";
+            //         break;
+            //     }
+            //     previous_energy = best_energy; // Update the previous energy
+            // }
             // Reproduce
             reproduce(population_left, population_right, fitness_array, noise_scale);
         }

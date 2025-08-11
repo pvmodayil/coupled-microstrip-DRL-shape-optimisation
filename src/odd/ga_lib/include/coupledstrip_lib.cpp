@@ -1,6 +1,6 @@
 // Include the header for this source file
 #include "coupledstrip_lib.h"
-
+#include <iostream>
 #include <numbers>
 #include <stdexcept>
 #include <format>
@@ -104,10 +104,12 @@ namespace CSA{
 
         // vn1
         //=========================
-        Eigen::ArrayXd sin_left = (alpha.matrix() * x_left.bottomRows(M-1).matrix().transpose()).array().sin()
-                                    - (alpha.matrix() * x_left.topRows(M-1).matrix().transpose()).array().sin(); // nx1 x 1xM-1 = nxM-1
+        // This calculation results in 2D so the .array() should be maped to ArrayXXd datatype , here a final .matrix will do the job
+        Eigen::MatrixXd sin_left = ((alpha.matrix() * x_left.bottomRows(M-1).matrix().transpose()).array().sin()
+                                    - (alpha.matrix() * x_left.topRows(M-1).matrix().transpose()).array().sin()).matrix(); // nx1 x 1xM-1 = nxM-1
+        
         Eigen::ArrayXd vn1 = (1/alpha.square())*(
-            (sin_left.matrix() * m.matrix()).array()
+            (sin_left * m.matrix()).array()
         ); // nx1 x (nxM-1 x M-1x1) = nx1
 
         // vn2
@@ -131,8 +133,8 @@ namespace CSA{
 
         // vn4
         //=========================
-        Eigen::ArrayXd sin_right = (alpha.matrix() * x_right.bottomRows(N-1).matrix().transpose()).array().sin()
-                                    - (alpha.matrix() * x_right.topRows(N-1).matrix().transpose()).array().sin(); // nx1 x 1xM-1 = nxM-1
+        Eigen::MatrixXd sin_right = ((alpha.matrix() * x_right.bottomRows(N-1).matrix().transpose()).array().sin()
+                                    - (alpha.matrix() * x_right.topRows(N-1).matrix().transpose()).array().sin()).matrix(); // nx1 x 1xM-1 = nxM-1
         Eigen::ArrayXd vn4 = (1/alpha.square())*(
             (sin_right.matrix() * m_prime.matrix()).array()
         ); // nx1 x (nxN-1 x N-1x1) = nx1
