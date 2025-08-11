@@ -114,4 +114,14 @@ int main(){
     result_dataD["g_right"] = result_vec_rightD;
     std::string curve_output_filename = "../data/CaseD_optimized_curve.csv";
     fileio::write_csv(curve_output_filename, result_dataD);
+
+    std::unordered_map<std::string, std::vector<double>> energy_history;
+    energy_history["energy"] = std::vector<double>(resultD.energy_convergence.data(), resultD.energy_convergence.data() + resultD.energy_convergence.size());
+    energy_history["generation"] = std::vector<double>(num_generations + 1);
+    for (size_t i = 0; i < num_generations + 1; ++i) {
+        energy_history["generation"][i] = static_cast<double>(i);
+    }
+
+    std::string history_output_filename = "../data/energy_history.csv";
+    fileio::write_csv(history_output_filename, energy_history);
 }
