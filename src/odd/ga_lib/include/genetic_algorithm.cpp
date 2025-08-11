@@ -34,8 +34,7 @@ namespace GA{
         Eigen::ArrayXd g_right_start,
         Eigen::ArrayXd x_right_start, 
         int population_size, 
-        int num_generations, 
-        double mutation_rate)
+        int num_generations) 
         : 
         arrangement(arrangement),
         g_left_start(g_left_start),
@@ -43,8 +42,7 @@ namespace GA{
         g_right_start(g_right_start),
         x_right_start(x_right_start), 
         population_size(population_size), 
-        num_generations(num_generations), 
-        mutation_rate(mutation_rate) {
+        num_generations(num_generations){
             #pragma omp parallel
             {
                 #pragma omp single

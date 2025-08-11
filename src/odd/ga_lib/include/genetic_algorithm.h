@@ -31,7 +31,6 @@ namespace GA{
             Eigen::ArrayXd x_right_start;
             int population_size;
             int num_generations;
-            double mutation_rate;
             CSA::CoupledstripArrangement arrangement;
 
             // Random device
@@ -64,8 +63,7 @@ namespace GA{
                 Eigen::ArrayXd g_right_start,
                 Eigen::ArrayXd x_right_start, 
                 int population_size, 
-                int num_generations, 
-                double mutation_rate);
+                int num_generations);
             
             // Main function to run the optimization
             void optimize(double& noise_scale, GAResult& result);

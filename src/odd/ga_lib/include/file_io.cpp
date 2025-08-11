@@ -20,7 +20,7 @@ std::vector<std::string> split(const std::string& str, char delimiter) {
 }
 
 // Function to read a CSV file and store each column as a vector
-std::unordered_map<std::string, std::vector<double>> readCSV(const std::string& filename) {
+std::unordered_map<std::string, std::vector<double>> read_csv(const std::string& filename) {
     // Create map to be returned
     std::unordered_map<std::string, std::vector<double>> data;
     // Check if the file can be opened
@@ -67,7 +67,7 @@ std::unordered_map<std::string, std::vector<double>> readCSV(const std::string& 
 }
 
 // Function to write a map of vector to a CSV file
-void writeCSV(const std::string& filename, const std::unordered_map<std::string, std::vector<double>>& data) {
+void write_csv(const std::string& filename, const std::unordered_map<std::string, std::vector<double>>& data) {
     std::ofstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Failed to open file: " << filename << std::endl;
