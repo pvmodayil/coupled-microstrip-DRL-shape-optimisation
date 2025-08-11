@@ -51,13 +51,13 @@ GA::GAResult ga_optimize(const double V0,
         // Call the optimization
         double noise_scale=0.1;
         
-        // auto start = std::chrono::high_resolution_clock::now();
-        // GAProblem.optimize(noise_scale, result);
-        // auto end = std::chrono::high_resolution_clock::now();
+        auto start = std::chrono::high_resolution_clock::now();
+        GAProblem.optimize(noise_scale, result);
+        auto end = std::chrono::high_resolution_clock::now();
 
-        // std::chrono::duration<double, std::milli> duration = end - start;
-        // std::cout << "Execution time: " << duration.count()/1000 << " s\n";
-        std::cout << "Best energy: " << result.best_energy << "\n";
+        std::chrono::duration<double, std::milli> duration = end - start;
+        std::cout << "Execution time: " << duration.count()/1000 << " s\n";
+        std::cout << "Best energy: " << result.best_energy << " VAs\n";
 
         return result;
 }
