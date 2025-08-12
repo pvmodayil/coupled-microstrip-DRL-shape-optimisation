@@ -3,6 +3,7 @@
 #include "coupledstrip_lib.h"
 
 #include <random>
+#include <numeric>
 #include <iostream>
 #include <stdexcept>
 #include <format>
@@ -57,6 +58,43 @@ namespace GA{
             parent_index_dist = std::uniform_int_distribution<>(0, population_size - 1);
         }
     
+    /*
+    *******************************************************
+    *               Delt->Curve->Delta                    *
+    *******************************************************
+    */
+     Eigen::ArrayXd curve_to_delta(Eigen::ArrayXd& curve, size_t vector_size, bool decreasing){
+        
+        Eigen::ArrayXd delta = curve.bottomRows(vector_size - 1) - curve.topRows(vector_size - 1);
+        
+        if (decreasing){
+            // -dx to maintain positive values
+            delta = -1*delta;
+        }
+
+        return delta;
+     }
+
+     Eigen::ArrayXd delta_to_curve(Eigen::VectorXd& delta, size_t vector_size, bool decreasing){
+        Eigen::ArrayXd curve(vector_size);
+        Eigen::ArrayXd cumsum(delta.size());
+
+        if (decreasing){
+            curve(0) = 1;
+            std::partial_sum(delta.data(), delta.data() + delta.size(), cumsum.data());
+            // deltas are positive so subtract
+            curve.bottomRows(vector_size-1) = curve(0) - cumsum;
+
+            return curve;
+        }
+        // Increasing case
+        curve(0) = 0;
+        std::partial_sum(delta.data(), delta.data() + delta.size(), cumsum.data());
+        curve.bottomRows(vector_size-1) = curve(0) + cumsum;
+
+        return curve;
+     }
+
     /*
     *******************************************************
     *               Initial Population                    *
