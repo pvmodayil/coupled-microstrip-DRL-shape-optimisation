@@ -63,7 +63,7 @@ namespace GA{
     *               Delt->Curve->Delta                    *
     *******************************************************
     */
-     Eigen::ArrayXd curve_to_delta(const Eigen::ArrayXd& curve, size_t vector_size, bool decreasing){
+     Eigen::ArrayXd GeneticAlgorithm::curve_to_delta(const Eigen::ArrayXd& curve, size_t vector_size, bool decreasing){
         
         Eigen::ArrayXd delta = curve.bottomRows(vector_size - 1) - curve.topRows(vector_size - 1);
         
@@ -75,7 +75,7 @@ namespace GA{
         return delta;
      }
 
-     Eigen::ArrayXd delta_to_curve(const Eigen::Ref<const Eigen::VectorXd>& delta, size_t vector_size, bool decreasing){
+     Eigen::ArrayXd GeneticAlgorithm::delta_to_curve(const Eigen::Ref<const Eigen::VectorXd>& delta, size_t vector_size, bool decreasing){
         Eigen::ArrayXd curve(vector_size);
         Eigen::ArrayXd cumsum(delta.size());
 
