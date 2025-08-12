@@ -175,22 +175,22 @@ namespace GA{
     */
     size_t GeneticAlgorithm::select_parent(const Eigen::ArrayXd& fitness_array, const int& thread_id) {
         // Tournament selection with size 4
-        size_t candidate_index1;
-        size_t candidate_index2;
+        size_t best_candidate_idx;
+        size_t competetor_idx;
 
         // Do tournament selection
         std::mt19937& rng = rng_engines[thread_id];
-        candidate_index1 = parent_index_dist(rng);
+        best_candidate_idx = parent_index_dist(rng);
 
         for (int i : {1,2,3,4}){
-            candidate_index2 = parent_index_dist(rng);
+            competetor_idx = parent_index_dist(rng);
 
-            if (fitness_array[candidate_index2] < fitness_array[candidate_index1]) {
-                std::swap(candidate_index1, candidate_index2);
+            if (fitness_array[competetor_idx] < fitness_array[best_candidate_idx]) {
+                std::swap(best_candidate_idx, competetor_idx);
             }
         }
 
-        return candidate_index1;
+        return best_candidate_idx;
     }
 
     /*
