@@ -41,7 +41,7 @@ namespace GA{
             // Functions
             // ------------------------------------------------------
             Eigen::ArrayXd curve_to_delta(Eigen::ArrayXd& curve, size_t vector_size, bool decreasing);
-            Eigen::ArrayXd delta_to_curve(Eigen::VectorXd& delta, size_t vector_size, bool decreasing);
+            Eigen::ArrayXd delta_to_curve(const Eigen::Ref<const Eigen::VectorXd>& delta, size_t vector_size, bool decreasing);
             void initialize_population(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, double& noise_scale);
 
             double calculate_fitness(Eigen::ArrayXd& individual_left,Eigen::ArrayXd& individual_right);

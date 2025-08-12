@@ -63,7 +63,7 @@ namespace GA{
     *               Delt->Curve->Delta                    *
     *******************************************************
     */
-     Eigen::ArrayXd curve_to_delta(Eigen::ArrayXd& curve, size_t vector_size, bool decreasing){
+     Eigen::ArrayXd curve_to_delta(const Eigen::ArrayXd& curve, size_t vector_size, bool decreasing){
         
         Eigen::ArrayXd delta = curve.bottomRows(vector_size - 1) - curve.topRows(vector_size - 1);
         
@@ -75,7 +75,7 @@ namespace GA{
         return delta;
      }
 
-     Eigen::ArrayXd delta_to_curve(Eigen::VectorXd& delta, size_t vector_size, bool decreasing){
+     Eigen::ArrayXd delta_to_curve(const Eigen::Ref<const Eigen::VectorXd>& delta, size_t vector_size, bool decreasing){
         Eigen::ArrayXd curve(vector_size);
         Eigen::ArrayXd cumsum(delta.size());
 
@@ -309,13 +309,17 @@ namespace GA{
         // Vector size (with the expectation that left and right side have same size)
         size_t vector_size = g_left_size;
 
+        // Get the delta arrays
+        Eigen::ArrayXd delta_left = curve_to_delta(g_left_start,vector_size,false);
+        Eigen::ArrayXd delta_right = curve_to_delta(g_right_start,vector_size,true);
+
         // Create an initial population matrix and fitness array
-        // Map the vector and create a matrix where each column is a copy of the starting curve
-        Eigen::MatrixXd population_left = g_left_start.replicate(1, population_size);
-        Eigen::MatrixXd population_right = g_right_start.replicate(1, population_size);
+        Eigen::MatrixXd population_left = delta_left.replicate(1, population_size);
+        Eigen::MatrixXd population_right = delta_right.replicate(1, population_size);
         
         // Add random noise and initialize the population for left and right sides
         initialize_population(population_left,population_right,noise_scale);
+        
         // Array to hold fitness value corresponding to the individual in the population
         Eigen::ArrayXd fitness_array = Eigen::ArrayXd(population_size);
 
@@ -326,8 +330,8 @@ namespace GA{
             // Fitness calculation
             #pragma omp parallel for
             for(int i=0; i<population_size; ++i){
-                Eigen::ArrayXd individual_left = population_left.col(i).array();
-                Eigen::ArrayXd individual_right = population_right.col(i).array();
+                Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false);
+                Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true);
                 fitness_array[i] = calculate_fitness(individual_left,individual_right);
             }
 
