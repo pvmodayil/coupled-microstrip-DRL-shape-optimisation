@@ -362,11 +362,11 @@ namespace GA{
         // Optimized curve and metrics
         best_energy = fitness_array.minCoeff(&best_index); // Get the best energy of the last generation
         
-        result.best_curve_left = population_left.col(best_index); // Store the best curve of the last generation
+        result.best_curve_left = delta_to_curve(population_left.col(best_index), vector_size, false); // Store the best curve of the last generation
         result.best_curve_left(0) = 0.0;
         result.best_curve_left(vector_size-1) = 1.0;
 
-        result.best_curve_right = population_right.col(best_index);
+        result.best_curve_right = delta_to_curve(population_right.col(best_index), vector_size, true);
         result.best_curve_right(0) = 1.0;
         result.best_curve_right(vector_size-1) = 0.0;
 
