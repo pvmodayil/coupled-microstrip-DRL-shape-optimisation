@@ -189,7 +189,7 @@ namespace GA{
     *                     Reproduction                    *
     *******************************************************
     */
-    Eigen::VectorXi select_elites(Eigen::ArrayXd& fitness_array, size_t elite_size){
+    Eigen::VectorXi GeneticAlgorithm::select_elites(Eigen::ArrayXd& fitness_array, size_t elite_size){
         Eigen::VectorXi sorted_idx = Eigen::VectorXi::LinSpaced(fitness_array.size(), 0, fitness_array.size()-1);
 
         // Minimisation problem
