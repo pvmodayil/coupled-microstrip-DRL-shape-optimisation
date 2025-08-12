@@ -119,15 +119,15 @@ int main(){
     std::string curve_output_filename = "../data/CaseD_optimized_curve.csv";
     fileio::write_csv(curve_output_filename, result_dataD);
 
-    std::unordered_map<std::string, std::vector<double>> energy_history;
-    energy_history["energy"] = std::vector<double>(resultD.energy_convergence.data(), resultD.energy_convergence.data() + resultD.energy_convergence.size());
-    energy_history["generation"] = std::vector<double>(num_generations + 1);
+    std::unordered_map<std::string, std::vector<double>> energy_historyD;
+    energy_historyD["energy"] = std::vector<double>(resultD.energy_convergence.data(), resultD.energy_convergence.data() + resultD.energy_convergence.size());
+    energy_historyD["generation"] = std::vector<double>(num_generations + 1);
     for (size_t i = 0; i < num_generations + 1; ++i) {
-        energy_history["generation"][i] = static_cast<double>(i);
+        energy_historyD["generation"][i] = static_cast<double>(i);
     }
 
     std::string history_output_filename = "../data/energy_history_CaseD.csv";
-    fileio::write_csv(history_output_filename, energy_history);
+    fileio::write_csv(history_output_filename, energy_historyD);
 
     /*
     *******************************************************
@@ -135,7 +135,7 @@ int main(){
     *******************************************************
     */
    // Read starting curve cased D
-    std::string filename = "../data/CaseL_predicted_curve.csv";
+    filename = "../data/CaseL_predicted_curve.csv";
     std::cout<< "Reading g point values from: " << filename << std::endl;
     std::unordered_map<std::string, std::vector<double>> dataL = fileio::read_csv(filename);
     
@@ -146,16 +146,7 @@ int main(){
     }
 
     // Coupled Strip arrangement TC#1 Case D
-    double V0 = 1.0;
-    double space_bw_strps = 200e-6;
-    double width_micrstr = 150e-6;
-    double ht_micrstr = 0;
-    double hw_arra = 3e-3;
-    double ht_arra = 2.76e-3;
-    double ht_subs = 112e-6;
-    double er1 = 1.0;
-    double er2 = 1.0;
-    int num_fs = 1000; 
+    er2 = 1.0;
     
     // Convert the x and g vectors to Eigen arrays
     Eigen::ArrayXd x_leftL = Eigen::Map<const Eigen::ArrayXd>(dataL["x_left"].data(), dataL["x_left"].size()); // Mx1
@@ -163,8 +154,6 @@ int main(){
     Eigen::ArrayXd x_rightL = Eigen::Map<const Eigen::ArrayXd>(dataL["x_right"].data(), dataL["x_right"].size()); // Mx1
     Eigen::ArrayXd g_rightL = Eigen::Map<const Eigen::ArrayXd>(dataL["g_right"].data(), dataL["g_right"].size()); // Mx1
 
-    int population_size = 100;
-    int num_generations = 1000;
     GA::GAResult resultL = ga_optimize(V0,space_bw_strps,width_micrstr,ht_micrstr,hw_arra,ht_arra,ht_subs,er1,er2,num_fs,population_size,num_generations,
     x_leftL,g_leftL,x_rightL,g_rightL);
     
@@ -176,18 +165,18 @@ int main(){
     result_dataL["g_left"] = result_vec_leftD;
     result_dataL["x_right"] = dataL["x_right"];
     result_dataL["g_right"] = result_vec_rightD;
-    std::string curve_output_filename = "../data/CaseL_optimized_curve.csv";
+    curve_output_filename = "../data/CaseL_optimized_curve.csv";
     fileio::write_csv(curve_output_filename, result_dataL);
 
-    std::unordered_map<std::string, std::vector<double>> energy_history;
-    energy_history["energy"] = std::vector<double>(resultL.energy_convergence.data(), resultL.energy_convergence.data() + resultL.energy_convergence.size());
-    energy_history["generation"] = std::vector<double>(num_generations + 1);
+    std::unordered_map<std::string, std::vector<double>> energy_historyL;
+    energy_historyL["energy"] = std::vector<double>(resultL.energy_convergence.data(), resultL.energy_convergence.data() + resultL.energy_convergence.size());
+    energy_historyL["generation"] = std::vector<double>(num_generations + 1);
     for (size_t i = 0; i < num_generations + 1; ++i) {
-        energy_history["generation"][i] = static_cast<double>(i);
+        energy_historyL["generation"][i] = static_cast<double>(i);
     }
 
-    std::string history_output_filename = "../data/energy_history_CaseL.csv";
-    fileio::write_csv(history_output_filename, energy_history);
+    history_output_filename = "../data/energy_history_CaseL.csv";
+    fileio::write_csv(history_output_filename, energy_historyL);
 
     /*
     *******************************************************

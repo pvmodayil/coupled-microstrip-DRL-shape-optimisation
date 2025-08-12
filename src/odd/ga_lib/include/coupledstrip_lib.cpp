@@ -271,7 +271,7 @@ namespace CSA{
         return 376.62*E0/capacitanceL;
     }
 
-    double calculate_impedanceL(double capacitanceD, double capacitanceL){
+    double calculate_impedanceD(double capacitanceD, double capacitanceL){
         return 376.62*E0/(std::sqrt(capacitanceL*capacitanceD));
     }
 
