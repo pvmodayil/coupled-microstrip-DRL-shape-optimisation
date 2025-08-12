@@ -1,6 +1,7 @@
 // Include the header for this source file
 #include "coupledstrip_lib.h"
 #include <iostream>
+#include <cmath>
 #include <numbers>
 #include <stdexcept>
 #include <format>
@@ -257,4 +258,24 @@ namespace CSA{
         return w12;
     }
 
+    /*
+    *******************************************************
+    *      Capacitance, Impedance, Epsilon Effective      *
+    *******************************************************
+    */
+    double calculate_capacitance(double V0, double W){
+        return (2*W)/(V0*V0);
+    }
+
+    double calculate_impedanceL(double capacitanceL){
+        return 376.62*E0/capacitanceL;
+    }
+
+    double calculate_impedanceL(double capacitanceD, double capacitanceL){
+        return 376.62*E0/(std::sqrt(capacitanceL*capacitanceD));
+    }
+
+    double calculate_epsilonEff(double capacitanceD, double capacitanceL){
+        return capacitanceD/capacitanceL;
+    }
 } // namespace CSA

@@ -88,7 +88,7 @@ namespace CSA{
     *                      Energy                         *
     *******************************************************
     */
-   Eigen::ArrayXd logsinh(const Eigen::ArrayXd& vector);
+    Eigen::ArrayXd logsinh(const Eigen::ArrayXd& vector);
 
     Eigen::ArrayXd logcosh(const Eigen::ArrayXd& vector);
 
@@ -99,6 +99,13 @@ namespace CSA{
         const double& ht_subs,
         const int& num_fs,
         Eigen::ArrayXd& vn);
+
+    double calculate_capacitance(double V0, double W);
+    
+    double calculate_impedanceL(double capacitanceL);
+    double calculate_impedanceD(double capacitanceD, double capacitanceL);
+
+    double calculate_epsilonEff(double capacitanceD, double capacitanceL);
 
 } // Namespace CSA
 
