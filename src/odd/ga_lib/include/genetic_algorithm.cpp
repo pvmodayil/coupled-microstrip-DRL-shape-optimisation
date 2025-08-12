@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <format>
 
-void printProgressBar(int total, int current) {
+void print_progress_bar(int total, int current, double value) {
     constexpr int bar_width = 20; // Width of the progress bar
     float progress = static_cast<float>(current) / total;
 
@@ -19,7 +19,7 @@ void printProgressBar(int total, int current) {
         else if (i == pos) std::cout << ">";
         else std::cout << " ";
     }
-    std::cout << "] " << static_cast<int>(progress * 100.0f) << "%\r"; // \r returns cursor to the beginning of the line
+    std::cout << "] " << static_cast<int>(progress * 100.0f) << "(" << value <<")" << "%\r"; // \r returns cursor to the beginning of the line
     std::cout.flush(); // Ensure the output is printed immediately
 }
 
@@ -244,11 +244,11 @@ namespace GA{
     */
     void GeneticAlgorithm::reproduce(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, Eigen::ArrayXd& fitness_array, double& noise_scale){
         // Vector size (with the expectation that left and right side have same size)
-        size_t vector_size = g_left_start.size();
+        size_t delta_size = g_left_start.size() - 1; // Population is made up of deltas
 
         // Create a random noise scaled matrix for mutation
-        Eigen::MatrixXd new_population_left(vector_size, population_size);
-        Eigen::MatrixXd new_population_right(vector_size, population_size);
+        Eigen::MatrixXd new_population_left(delta_size, population_size);
+        Eigen::MatrixXd new_population_right(delta_size, population_size);
         
         // Select Elites
         constexpr size_t elite_size = 10;
@@ -291,7 +291,7 @@ namespace GA{
     */
     void GeneticAlgorithm::optimize(double& noise_scale, GAResult& result){
         size_t best_index = 0;
-        double best_energy = 0.0;
+        double best_energy = result.energy_convergence(0);
         double previous_energy = result.best_energy;
         
         // Need the length for further processing
@@ -325,7 +325,7 @@ namespace GA{
 
         // Iterate for num_generations steps
         for(size_t generation=1; generation<num_generations+1; ++generation){
-            printProgressBar(num_generations, generation);
+            print_progress_bar(num_generations, generation, best_energy);
 
             // Fitness calculation
             #pragma omp parallel for
