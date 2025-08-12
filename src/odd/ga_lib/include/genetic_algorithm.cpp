@@ -372,6 +372,6 @@ namespace GA{
 
         result.best_energy = best_energy; // Store the best energy of the last generation
     }
-    
+    git 
 
 } // end of namespace
