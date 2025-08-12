@@ -18,4 +18,5 @@ src/odd/ga_lib/extern/
 src/even/ga_lib/extern/
 
 # data folder
-src/odd/ga_lib/data/
+src/odd/ga_lib/data/*
+src/even/ga_lib/data/*

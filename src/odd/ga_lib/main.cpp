@@ -91,7 +91,7 @@ int main(){
     double ht_subs = 112e-6;
     double er1 = 1.0;
     double er2 = 4.5;
-    int num_fs = 2000; 
+    int num_fs = 1000; 
     
     // Convert the x and g vectors to Eigen arrays
     Eigen::ArrayXd x_leftD = Eigen::Map<const Eigen::ArrayXd>(dataD["x_left"].data(), dataD["x_left"].size()); // Mx1
