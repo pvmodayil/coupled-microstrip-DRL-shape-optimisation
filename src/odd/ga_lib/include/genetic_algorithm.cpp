@@ -103,18 +103,18 @@ namespace GA{
     void GeneticAlgorithm::initialize_population(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, double& noise_scale){
         
         // Vector size (with the expectation that left and right side have same size)
-        size_t vector_size = g_left_start.size();
+        size_t delta_size = g_left_start.size() - 1; // Population is made up of deltas
 
         // Random uniform distribution between -1 to 1 scaled to 0 to 1 and further scaled to create random noise
         Eigen::MatrixXd random_noise_left = (
             (noise_scale * 
-                0.5 * (Eigen::MatrixXd::Ones(vector_size, population_size) + Eigen::MatrixXd::Random(vector_size, population_size))
+                0.5 * (Eigen::MatrixXd::Ones(delta_size, population_size) + Eigen::MatrixXd::Random(delta_size, population_size))
             ).array() * population_left.array()
         ).matrix();
 
         Eigen::MatrixXd random_noise_right = (
             (noise_scale * 
-                0.5 * (Eigen::MatrixXd::Ones(vector_size, population_size) + Eigen::MatrixXd::Random(vector_size, population_size))
+                0.5 * (Eigen::MatrixXd::Ones(delta_size, population_size) + Eigen::MatrixXd::Random(delta_size, population_size))
             ).array() * population_right.array()
         ).matrix();
 
