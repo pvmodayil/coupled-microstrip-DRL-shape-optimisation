@@ -370,7 +370,7 @@ namespace GA{
         result.best_curve_right(0) = 1.0;
         result.best_curve_right(vector_size-1) = 0.0;
 
-        result.best_energy = best_energy; // Store the best energy of the last generation
+        result.best_energy = result.energy_convergence(num_generations); // Store the best energy of the last generation
     }
 
 } // end of namespace
