@@ -19,7 +19,7 @@ void print_progress_bar(int total, int current, double value) {
         else if (i == pos) std::cout << ">";
         else std::cout << " ";
     }
-    std::cout << "] " << static_cast<int>(progress * 100.0f) << "(" << value <<")" << "%\r"; // \r returns cursor to the beginning of the line
+    std::cout << "] " << static_cast<int>(progress * 100.0f) << "% = (" << value <<")\r"; // \r returns cursor to the beginning of the line
     std::cout.flush(); // Ensure the output is printed immediately
 }
 
