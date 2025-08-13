@@ -66,7 +66,7 @@ def predict(env: CoupledStripEnv, model: SAC) -> NDArray[np.float64]:
     action: NDArray
     _states: tuple | None
     
-    action, _states = model.predict(obs_space)
+    action, _states = model.predict(obs_space, deterministic=True)
     
     return np.abs(action)
 
@@ -103,6 +103,13 @@ def optimal_hw_arra(env: CoupledStripEnv, model: SAC, image_dir: str, case: str)
     vectorised_evaluateInit = np.vectorize(lambda new_hw_arra: evaluate(env,model,new_hw_arra))
     init_energy_array: NDArray = vectorised_evaluateInit(init_possible_range_array)
     init_optimal_hw_arra_val: float = init_possible_range_array[np.argmin(init_energy_array)]
+    
+    data = {
+        "a_vals": init_possible_range_array,
+        "energy": init_energy_array
+    }
+    
+    df_first = pd.DataFrame(data)
     plot_curve.plot_optimal_hw_arra(hw_arra_array=init_possible_range_array,energy_array=init_energy_array,image_dir=image_dir,name=f"{case}_Init")
     
     # Second run with tighter range
@@ -116,6 +123,13 @@ def optimal_hw_arra(env: CoupledStripEnv, model: SAC, image_dir: str, case: str)
     final_idx = np.argmin(final_energy_array)
     last_idx = np.size(final_energy_array)
     optimal_hw_arra_val: float = final_possible_range_array[final_idx]
+    
+    data = {
+        "a_vals": final_possible_range_array,
+        "energy": final_energy_array
+    }
+    df_second = pd.DataFrame(data)
+    combined_df = pd.concat([df_first.add_suffix('_first'), df_second.add_suffix('_second')], axis=1)
     plot_curve.plot_optimal_hw_arra(hw_arra_array=final_possible_range_array,energy_array=final_energy_array,image_dir=image_dir,name=f"{case}_Final")
     
     # Edge case when the result is not satisfactory
@@ -129,8 +143,16 @@ def optimal_hw_arra(env: CoupledStripEnv, model: SAC, image_dir: str, case: str)
         last_energy_array: NDArray = vectorised_evaluateLast(last_possible_range_array)
         last_idx = np.argmin(final_energy_array)
         optimal_hw_arra_val: float = final_possible_range_array[last_idx]
+        
+        data = {
+        "a_vals": final_possible_range_array,
+        "energy": final_energy_array
+        }
+        df_third = pd.DataFrame(data)
+        combined_df = pd.concat([combined_df, df_third.add_suffix('_third')], axis=1)
         plot_curve.plot_optimal_hw_arra(hw_arra_array=last_possible_range_array,energy_array=last_energy_array,image_dir=image_dir,name=f"{case}_Last")
     
+    combined_df.to_excel(os.path.join(image_dir,f"{case}_optimal_hw_arra_variation.xlsx"))
     return optimal_hw_arra_val
     
     
@@ -229,7 +251,7 @@ if __name__ == "__main__":
         ht_micrstr=0, # height of the microstripm, parameter t
         er1=1.0, # dielectric constatnt for medium 1
         er2=4.5, # dielctric constant for medium 2
-        num_fs=1500, # number of fourier series coefficients
+        num_fs=1000, # number of fourier series coefficients
         num_pts=30, # number of points for the piece wise linear approaximation
         mode="Odd"
     )
