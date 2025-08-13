@@ -172,6 +172,8 @@ def evaluate_metrics(V0, energyD, energyL) -> dict[str,float]:
     epsEff: float = csa_lib.calculate_epsilonEff(cD=cD,cL=cL)
     
     data: dict[str, float] = {
+        "wD": energyD,
+        "wL": energyL,
         "cD": cD,
         "cL": cL,
         "zD": zD,
@@ -182,6 +184,8 @@ def evaluate_metrics(V0, energyD, energyL) -> dict[str,float]:
     return data
         
 def main(CSA: CoupledStripArrangement, model_path: str) -> None:
+    # original hw_arra
+    original_hw_arra: float = CSA.hw_arra
     cwd: str = os.getcwd()  
     test_dir: str = os.path.join(cwd,"test",CSA.mode) # training/mode/env_type/images
     create_directories(test_dir=test_dir)
@@ -194,6 +198,7 @@ def main(CSA: CoupledStripArrangement, model_path: str) -> None:
     rl_energyD, ga_energyD = hybrid_algorithm(env=envD, model=model, image_dir=test_dir, case="CaseD")
     
     # Case L
+    CSA.hw_arra = original_hw_arra
     CSA.er2 = 1.0
     envL: CoupledStripEnv = CoupledStripEnv(CSA=CSA)
     # Run hybrid RL-GA
