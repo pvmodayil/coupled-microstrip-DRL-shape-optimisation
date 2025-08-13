@@ -77,13 +77,7 @@ def possible_range(lower_bound: float, upper_bound: float) -> NDArray:
     # Step size is a small fraction of the available space
     step: float = 0.1*gap
     
-    # Range to vary
-    variation: float = 0.5*gap
-    
-    _lower_bound: float = max(lower_bound + step, upper_bound - variation)
-    _upper_bound: float = upper_bound + variation
-     
-    possible_range_array: NDArray = np.arange(_lower_bound, _upper_bound, step)
+    possible_range_array: NDArray = np.arange(lower_bound+step, upper_bound, step)
     
     return possible_range_array
 
@@ -100,20 +94,19 @@ def evaluate(env: CoupledStripEnv, model: SAC, new_hw_arra: float) -> float:
     return energy
 
 def optimal_hw_arra(env: CoupledStripEnv, model: SAC, image_dir: str, case: str) -> float:
-    # Keep for later use
-    original_hw_arra: float = env.CSA.hw_arra
-    
     # Get the possible set of values for hw_arra
     init_lower: float = env.CSA.width_micrstr + env.CSA.space_bw_strps/2
     init_upper: float = env.CSA.hw_arra
-    init_possible_range_array: NDArray = possible_range(lower_bound=init_lower, upper_bound=init_upper)
+    variation: float = 0.2*abs(init_lower - init_upper)
+    init_possible_range_array: NDArray = possible_range(lower_bound=init_lower, upper_bound=init_upper + variation)
     
     vectorised_evaluateInit = np.vectorize(lambda new_hw_arra: evaluate(env,model,new_hw_arra))
     init_energy_array: NDArray = vectorised_evaluateInit(init_possible_range_array)
     init_optimal_hw_arra_val: float = init_possible_range_array[np.argmin(init_energy_array)]
     plot_curve.plot_optimal_hw_arra(hw_arra_array=init_possible_range_array,energy_array=init_energy_array,image_dir=image_dir,name=f"{case}_Init")
+    
     # Second run with tighter range
-    variation: float = 0.5*abs(original_hw_arra - init_optimal_hw_arra_val)
+    variation: float = 0.3*abs(init_lower - init_optimal_hw_arra_val)
     final_lower: float = init_optimal_hw_arra_val - variation
     final_upper: float = init_optimal_hw_arra_val + variation
     final_possible_range_array: NDArray = possible_range(lower_bound=final_lower, upper_bound=final_upper)
@@ -127,7 +120,7 @@ def optimal_hw_arra(env: CoupledStripEnv, model: SAC, image_dir: str, case: str)
     
     # Edge case when the result is not satisfactory
     if final_idx == 0 or final_idx == last_idx:
-        variation: float = 0.5*abs(init_optimal_hw_arra_val - optimal_hw_arra_val)
+        variation: float = 0.4*abs(init_lower - optimal_hw_arra_val)
         last_lower: float = optimal_hw_arra_val - variation
         last_upper: float = optimal_hw_arra_val + variation
         last_possible_range_array: NDArray = possible_range(lower_bound=last_lower, upper_bound=last_upper)
