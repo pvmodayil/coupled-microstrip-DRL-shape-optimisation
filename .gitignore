@@ -2,6 +2,9 @@
 training/
 training/*
 
+test/
+test/*
+
 # pycache
 src/odd/__pycache__
 src/odd/utils/__pycache__
