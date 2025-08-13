@@ -120,8 +120,23 @@ def optimal_hw_arra(env: CoupledStripEnv, model: SAC, image_dir: str, case: str)
     
     vectorised_evaluateFinal = np.vectorize(lambda new_hw_arra: evaluate(env,model,new_hw_arra))
     final_energy_array: NDArray = vectorised_evaluateFinal(final_possible_range_array)
-    optimal_hw_arra_val: float = final_possible_range_array[np.argmin(final_energy_array)]
+    final_idx = np.argmin(final_energy_array)
+    last_idx = np.size(final_energy_array)
+    optimal_hw_arra_val: float = final_possible_range_array[final_idx]
     plot_curve.plot_optimal_hw_arra(hw_arra_array=final_possible_range_array,energy_array=final_energy_array,image_dir=image_dir,name=f"{case}_Final")
+    
+    # Edge case when the result is not satisfactory
+    if final_idx == 0 or final_idx == last_idx:
+        variation: float = 0.5*abs(init_optimal_hw_arra_val - optimal_hw_arra_val)
+        last_lower: float = optimal_hw_arra_val - variation
+        last_upper: float = optimal_hw_arra_val + variation
+        last_possible_range_array: NDArray = possible_range(lower_bound=last_lower, upper_bound=last_upper)
+        
+        vectorised_evaluateLast = np.vectorize(lambda new_hw_arra: evaluate(env,model,new_hw_arra))
+        last_energy_array: NDArray = vectorised_evaluateLast(last_possible_range_array)
+        last_idx = np.argmin(final_energy_array)
+        optimal_hw_arra_val: float = final_possible_range_array[last_idx]
+        plot_curve.plot_optimal_hw_arra(hw_arra_array=last_possible_range_array,energy_array=last_energy_array,image_dir=image_dir,name=f"{case}_Last")
     
     return optimal_hw_arra_val
     
@@ -216,8 +231,8 @@ if __name__ == "__main__":
         ht_micrstr=0, # height of the microstripm, parameter t
         er1=1.0, # dielectric constatnt for medium 1
         er2=4.5, # dielctric constant for medium 2
-        num_fs=2000, # number of fourier series coefficients
-        num_pts=50, # number of points for the piece wise linear approaximation
+        num_fs=1500, # number of fourier series coefficients
+        num_pts=30, # number of points for the piece wise linear approaximation
         mode="Odd"
     )
     
