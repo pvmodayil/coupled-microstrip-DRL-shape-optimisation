@@ -70,7 +70,11 @@ int main(){
     // Set the number of threads for OpenMP
     omp_set_num_threads(omp_get_max_threads());
 
-    // Read starting curve cased D
+    /*
+    *******************************************************
+    *                      CASE D                         *
+    *******************************************************
+    */
     std::string filename = "../data/CaseD_predicted_curve.csv";
     std::cout<< "Reading g point values from: " << filename << std::endl;
     std::unordered_map<std::string, std::vector<double>> dataD = fileio::read_csv(filename);
@@ -91,7 +95,7 @@ int main(){
     double ht_subs = 112e-6;
     double er1 = 1.0;
     double er2 = 4.5;
-    int num_fs = 2000; 
+    int num_fs = 1000; 
     
     // Convert the x and g vectors to Eigen arrays
     Eigen::ArrayXd x_leftD = Eigen::Map<const Eigen::ArrayXd>(dataD["x_left"].data(), dataD["x_left"].size()); // Mx1
@@ -115,13 +119,83 @@ int main(){
     std::string curve_output_filename = "../data/CaseD_optimized_curve.csv";
     fileio::write_csv(curve_output_filename, result_dataD);
 
-    std::unordered_map<std::string, std::vector<double>> energy_history;
-    energy_history["energy"] = std::vector<double>(resultD.energy_convergence.data(), resultD.energy_convergence.data() + resultD.energy_convergence.size());
-    energy_history["generation"] = std::vector<double>(num_generations + 1);
+    std::unordered_map<std::string, std::vector<double>> energy_historyD;
+    energy_historyD["energy"] = std::vector<double>(resultD.energy_convergence.data(), resultD.energy_convergence.data() + resultD.energy_convergence.size());
+    energy_historyD["generation"] = std::vector<double>(num_generations + 1);
     for (size_t i = 0; i < num_generations + 1; ++i) {
-        energy_history["generation"][i] = static_cast<double>(i);
+        energy_historyD["generation"][i] = static_cast<double>(i);
     }
 
-    std::string history_output_filename = "../data/energy_history.csv";
-    fileio::write_csv(history_output_filename, energy_history);
+    std::string history_output_filename = "../data/energy_history_CaseD.csv";
+    fileio::write_csv(history_output_filename, energy_historyD);
+
+    /*
+    *******************************************************
+    *                      CASE L                         *
+    *******************************************************
+    */
+   // Read starting curve cased D
+    filename = "../data/CaseL_predicted_curve.csv";
+    std::cout<< "Reading g point values from: " << filename << std::endl;
+    std::unordered_map<std::string, std::vector<double>> dataL = fileio::read_csv(filename);
+    
+    if (dataL["x_left"].empty() || dataL["g_left"].empty() ||
+    dataL["x_right"].empty() || dataL["g_right"].empty()) {
+    std::cerr << "Error: One or more input vectors are empty!" << std::endl;
+    return 1;
+    }
+
+    // Coupled Strip arrangement TC#1 Case D
+    er2 = 1.0;
+    
+    // Convert the x and g vectors to Eigen arrays
+    Eigen::ArrayXd x_leftL = Eigen::Map<const Eigen::ArrayXd>(dataL["x_left"].data(), dataL["x_left"].size()); // Mx1
+    Eigen::ArrayXd g_leftL = Eigen::Map<const Eigen::ArrayXd>(dataL["g_left"].data(), dataL["g_left"].size()); // Mx1
+    Eigen::ArrayXd x_rightL = Eigen::Map<const Eigen::ArrayXd>(dataL["x_right"].data(), dataL["x_right"].size()); // Mx1
+    Eigen::ArrayXd g_rightL = Eigen::Map<const Eigen::ArrayXd>(dataL["g_right"].data(), dataL["g_right"].size()); // Mx1
+
+    GA::GAResult resultL = ga_optimize(V0,space_bw_strps,width_micrstr,ht_micrstr,hw_arra,ht_arra,ht_subs,er1,er2,num_fs,population_size,num_generations,
+    x_leftL,g_leftL,x_rightL,g_rightL);
+    
+    std::cout<< "Finished GA starting store" << std::endl;
+    std::vector<double> result_vec_leftL(resultL.best_curve_left.data(), resultL.best_curve_left.data() + resultL.best_curve_left.size());
+    std::vector<double> result_vec_rightL(resultL.best_curve_right.data(), resultL.best_curve_right.data() + resultL.best_curve_right.size());
+    std::unordered_map<std::string, std::vector<double>> result_dataL;
+    result_dataL["x_left"] = dataL["x_left"];
+    result_dataL["g_left"] = result_vec_leftD;
+    result_dataL["x_right"] = dataL["x_right"];
+    result_dataL["g_right"] = result_vec_rightD;
+    curve_output_filename = "../data/CaseL_optimized_curve.csv";
+    fileio::write_csv(curve_output_filename, result_dataL);
+
+    std::unordered_map<std::string, std::vector<double>> energy_historyL;
+    energy_historyL["energy"] = std::vector<double>(resultL.energy_convergence.data(), resultL.energy_convergence.data() + resultL.energy_convergence.size());
+    energy_historyL["generation"] = std::vector<double>(num_generations + 1);
+    for (size_t i = 0; i < num_generations + 1; ++i) {
+        energy_historyL["generation"][i] = static_cast<double>(i);
+    }
+
+    history_output_filename = "../data/energy_history_CaseL.csv";
+    fileio::write_csv(history_output_filename, energy_historyL);
+
+    /*
+    *******************************************************
+    *                      Metrics                        *
+    *******************************************************
+    */
+
+    double cD = CSA::calculate_capacitance(V0, resultD.best_energy);
+    double cL = CSA::calculate_capacitance(V0, resultL.best_energy);
+
+    double zL = CSA::calculate_impedanceL(cL);
+    double zD = CSA::calculate_impedanceD(cD,cL);
+
+    double epsEff = CSA::calculate_epsilonEff(cD,cL);
+
+    std::cout<<"\n----------------------------\n";
+    std::cout<<"Capacitance D : " <<cD<< " F \n";
+    std::cout<<"Capacitance L : " <<cL<< " F \n";
+    std::cout<<"Impedance D   : " <<zD<< " Ohm \n";
+    std::cout<<"Impedance L   : " <<zL<< " Ohm \n";
+    std::cout<<"Epsilon Eff   : " <<epsEff<< "\n";
 }

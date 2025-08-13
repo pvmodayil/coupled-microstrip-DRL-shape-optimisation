@@ -1,6 +1,7 @@
 // Include the header for this source file
 #include "coupledstrip_lib.h"
 #include <iostream>
+#include <cmath>
 #include <numbers>
 #include <stdexcept>
 #include <format>
@@ -37,6 +38,19 @@ namespace CSA{
             throw std::invalid_argument("Invalid monotonicity type");
         }
 
+    }
+
+    // Function to return degree of monotonicity
+    double degree_monotone(const Eigen::ArrayXd& g_left, const Eigen::ArrayXd& g_right){
+        size_t m = g_left.size();
+        Eigen::ArrayXd dx_left = g_left.bottomRows(m-1) - g_left.topRows(m-1);
+
+        m = g_right.size();
+        Eigen::ArrayXd dx_right = g_right.bottomRows(m-1) - g_right.topRows(m-1);
+
+        double degree =  2*m - 0.5*((dx_left > 0).count() + (dx_right < 0).count()); // Shouldnt be zero
+
+        return degree;
     }
 
     // Function to check whether the curve is convex
@@ -244,4 +258,24 @@ namespace CSA{
         return w12;
     }
 
+    /*
+    *******************************************************
+    *      Capacitance, Impedance, Epsilon Effective      *
+    *******************************************************
+    */
+    double calculate_capacitance(double V0, double W){
+        return (2*W)/(V0*V0);
+    }
+
+    double calculate_impedanceL(double capacitanceL){
+        return 376.62*E0/capacitanceL;
+    }
+
+    double calculate_impedanceD(double capacitanceD, double capacitanceL){
+        return 376.62*E0/(std::sqrt(capacitanceL*capacitanceD));
+    }
+
+    double calculate_epsilonEff(double capacitanceD, double capacitanceL){
+        return capacitanceD/capacitanceL;
+    }
 } // namespace CSA

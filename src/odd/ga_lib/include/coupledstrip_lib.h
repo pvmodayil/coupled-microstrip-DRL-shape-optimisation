@@ -61,6 +61,9 @@ namespace CSA{
     // Function to check whether the curve is convex
     bool is_convex(const Eigen::ArrayXd& g);
 
+    // Function to return degree of monotonicity
+    double degree_monotone(const Eigen::ArrayXd& g_left, const Eigen::ArrayXd& g_right);
+
     /*
     *******************************************************
     *            Potential & Potential Coeffs             *
@@ -85,7 +88,7 @@ namespace CSA{
     *                      Energy                         *
     *******************************************************
     */
-   Eigen::ArrayXd logsinh(const Eigen::ArrayXd& vector);
+    Eigen::ArrayXd logsinh(const Eigen::ArrayXd& vector);
 
     Eigen::ArrayXd logcosh(const Eigen::ArrayXd& vector);
 
@@ -96,6 +99,13 @@ namespace CSA{
         const double& ht_subs,
         const int& num_fs,
         Eigen::ArrayXd& vn);
+
+    double calculate_capacitance(double V0, double W);
+    
+    double calculate_impedanceL(double capacitanceL);
+    double calculate_impedanceD(double capacitanceD, double capacitanceL);
+
+    double calculate_epsilonEff(double capacitanceD, double capacitanceL);
 
 } // Namespace CSA
 

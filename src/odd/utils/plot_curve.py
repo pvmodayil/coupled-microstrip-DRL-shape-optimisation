@@ -29,3 +29,23 @@ def plot_potential(x_left: NDArray, g_left: NDArray,
     plt.grid(True)
     plt.savefig(image_path)
     plt.close()
+    
+def plot_optimal_hw_arra(hw_arra_array: NDArray, 
+                    energy_array: NDArray, 
+                    image_dir: str,
+                    name: str) -> None:
+    
+    idx: np.intp = np.argmin(energy_array)
+    
+    
+    image_path: str = os.path.join(image_dir,f'{name}_optimal_hw_arra_variation.png')
+    plt.figure(figsize=(15,10))
+    plt.plot(hw_arra_array*1000, energy_array, color = 'green',label='_nolabel')
+    plt.scatter(hw_arra_array[idx]*1000, energy_array[idx], color = 'orange',label='_nolabel')
+   
+    # plt.legend(loc='upper right')
+    plt.ylabel('Energy VAs')
+    plt.xlabel('x axis [mm]')
+    plt.grid(True)
+    plt.savefig(image_path)
+    plt.close()

@@ -40,6 +40,8 @@ namespace GA{
             
             // Functions
             // ------------------------------------------------------
+            Eigen::ArrayXd curve_to_delta(const Eigen::ArrayXd& curve, size_t vector_size, bool decreasing);
+            Eigen::ArrayXd delta_to_curve(const Eigen::Ref<const Eigen::VectorXd>& delta, size_t vector_size, bool decreasing);
             void initialize_population(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, double& noise_scale);
 
             double calculate_fitness(Eigen::ArrayXd& individual_left,Eigen::ArrayXd& individual_right);
@@ -48,6 +50,7 @@ namespace GA{
             size_t select_parent(const Eigen::ArrayXd& fitness_array, const int& thread_id);
 
             // Reproduction
+            Eigen::VectorXi select_elites(Eigen::ArrayXd& fitness_array, size_t elite_size);
             void reproduce(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, Eigen::ArrayXd& fitness_array, double& noise_scale);
             void crossover(Eigen::VectorXd& parent1, 
                 Eigen::VectorXd& parent2, 
