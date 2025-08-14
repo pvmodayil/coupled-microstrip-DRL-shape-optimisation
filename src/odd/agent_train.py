@@ -190,6 +190,7 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
 
     # Create DataFrame from the dictionary
     pd.DataFrame(dataD).to_excel(os.path.join(image_dir,'CaseD_predicted_curve.xlsx'), index=False)
+    pd.DataFrame(dataD).to_csv(os.path.join(image_dir,'CaseD_predicted_curve.csv'), index=False)
     plot_curve.plot_potential(x_left=x_leftD,g_left=g_leftD,x_right=x_rightD,g_right=g_rightD,image_dir=image_dir,name="CaseD")
     
     # Calculate Metrics
@@ -226,6 +227,7 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
 
     # Create DataFrame from the dictionary
     pd.DataFrame(dataL).to_excel(os.path.join(image_dir,'CaseL_predicted_curve.xlsx'), index=False)
+    pd.DataFrame(dataL).to_csv(os.path.join(image_dir,'CaseL_predicted_curve.csv'), index=False)
     plot_curve.plot_potential(x_left=x_leftL,g_left=g_leftL,x_right=x_rightL,g_right=g_rightL,image_dir=image_dir,name="CaseL")
     
     # Calculate Metrics
