@@ -84,7 +84,7 @@ class CoupledStripEnv(Env):
         (0,action[0]), (action[1], action[2]), (action[3], action[4]), (s/2,1) => Left side
         (d,1), (action[5], action[6]), (action[7], action[8]), (a,0) => Right side
         """
-        bound: float = 0.6
+        bound: float = 0.9
         self.action_space: Box = Box(low=-bound, high=bound, shape=(9,), dtype=np.float32) #type:ignore
         self.action_space_bound: float = bound
         """
