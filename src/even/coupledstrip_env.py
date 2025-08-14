@@ -84,7 +84,7 @@ class CoupledStripEnv(Env):
         (0,action[0]), (action[1], action[2]), (action[3], action[4]), (s/2,1) => Left side
         (d,1), (action[5], action[6]), (action[7], action[8]), (a,0) => Right side
         """
-        bound: float = 0.9
+        bound: float = 0.8
         self.action_space: Box = Box(low=-bound, high=bound, shape=(9,), dtype=np.float32) #type:ignore
         self.action_space_bound: float = bound
         """
@@ -130,20 +130,31 @@ class CoupledStripEnv(Env):
         
         if side == 'left':
             x_end_left: float = self.CSA.space_bw_strps/2
-            P0: NDArray[np.float64] = np.array([0, action[0]])
-            P10: float = action[1]*x_end_left
-            P1: NDArray[np.float64] = np.array([P10, action[2]])
-            P20: float = action[3]*x_end_left
-            P2: NDArray[np.float64] = np.array([P20, action[4]])
+            P0Y: float = action[0]
+            P0: NDArray[np.float64] = np.array([0, P0Y])
+            
+            P1X: float = action[1]*x_end_left
+            P1Y: float = P0Y + action[2]*(1-P0Y)
+            P1: NDArray[np.float64] = np.array([P1X, P1Y])
+            
+            P2X: float = P1X + action[3]*(x_end_left - P1X)
+            P2Y: float = P1Y + action[4]*(1-P1Y)
+            P2: NDArray[np.float64] = np.array([P2X, P2Y])
+            
             P3: NDArray[np.float64] = np.array([x_end_left, 1])
             
         elif side == 'right':
             x_start_right: float = self.CSA.space_bw_strps/2 + self.CSA.width_micrstr
             P0: NDArray[np.float64] = np.array([x_start_right, 1])
-            P10: float = x_start_right + action[0]*(self.CSA.hw_arra-x_start_right)
-            P1: NDArray[np.float64] = np.array([P10, action[1]])
-            P20: float = x_start_right + action[2]*(self.CSA.hw_arra-x_start_right)
-            P2: NDArray[np.float64] = np.array([P20, action[3]])
+            
+            P1X: float = x_start_right + action[0]*(self.CSA.hw_arra-x_start_right)
+            P1Y: float = action[1]
+            P1: NDArray[np.float64] = np.array([P1X, P1Y])
+           
+            P2X: float = P1X + action[2]*(self.CSA.hw_arra-P1X)
+            P2Y: float = P1Y - action[3]*(P1Y - 0)
+            P2: NDArray[np.float64] = np.array([P2X, P2Y])
+            
             P3: NDArray[np.float64] = np.array([self.CSA.hw_arra, 0])
             
         else:
@@ -295,6 +306,12 @@ class CoupledStripEnv(Env):
         if np.all(action == 0):
             # conditon where no chnage happens
             return MAX_PENALITY
+        left_action_y_coords: NDArray = np.array([action[0], action[2], action[4]])
+        
+        # To Promote Convexity
+        if not csa_lib.is_monotone(g=left_action_y_coords,type="increasing"):
+            return MAX_PENALITY
+        
         # Check for monotonicity
         if csa_lib.is_monotone(g=g_left,type="increasing") and csa_lib.is_monotone(g=g_right,type="decreasing"):
             if csa_lib.is_convex(g=g_left) and csa_lib.is_convex(g=g_right):
