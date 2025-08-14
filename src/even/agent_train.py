@@ -204,7 +204,7 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     env.CSA.er2 = 1.0
     actionL: NDArray = predict(env,model)
     
-    mid_point: int = int(env.action_space.shape[0]/2)
+    mid_point: int = env.action_space.shape[0]//2 + 1
     action_leftL: NDArray = actionL[:mid_point]
     action_rightL: NDArray = actionL[mid_point:]
     
