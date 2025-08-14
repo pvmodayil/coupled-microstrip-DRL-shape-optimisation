@@ -1,8 +1,8 @@
 #################################################
 # Author        : Philip Varghese Modayil
 # Last Update   : 28-07-2025
-# Topic         : Coupled Strip Lib Fucntions
-# Description   : This file sets up the required functions for various calculation regarding the coupled microstrip
+# Topic         : Coupled Strip Lib Fucntions Even Mode
+# Description   : This file sets up the required functions for various calculation regarding the coupled microstrip in Even mode.
 #################################################
 
 #####################################################################################
@@ -354,24 +354,23 @@ def calculate_energy(er1: float, er2: float, hw_arra: float, ht_arra: float, ht_
     e2: float = er2*e0
     
     num_fs: int = np.size(vn)
-    n: NDArray[np.int64] = np.arange(1,num_fs+1)
+    n: NDArray[np.int64] = np.arange(0,num_fs)
     
     # Energy Formula Odd-Mode
     #########################
-    coeff = (n*np.pi/4)*vn**2 # 1 x n
+    coeff = ((2*n+1)*np.pi/4)*vn**2 # 1 x n
     
     # w1
     #####
-    theta1: NDArray[np.float64] = (n*np.pi*(ht_arra-ht_subs)/hw_arra).astype(np.float64) # 1 x n
+    theta1: NDArray[np.float64] = (((2*n+1)*np.pi/2)*(ht_arra-ht_subs)/hw_arra).astype(np.float64) # 1 x n
     coth1: NDArray[np.float64] = np.exp(logcosh(theta1)-logsinh(theta1)) # log(cosh/sinh) = log(cosh) - log(sinh)
     w1: NDArray[np.float64] = e1*coth1 # 1xn
 
     # w2
     #####
-    theta2: NDArray[np.float64] = (n*np.pi*ht_subs/hw_arra).astype(np.float64) # 1 x n
+    theta2: NDArray[np.float64] = (((2*n+1)*np.pi/2)*ht_subs/hw_arra).astype(np.float64) # 1 x n
     coth2: NDArray[np.float64] = np.exp(logcosh(theta2)-logsinh(theta2)) # log(cosh/sinh) = log(cosh) - log(sinh)
     w2: NDArray[np.float64] = e2*coth2 # 1xn
-
 
     W: float = np.sum(coeff*(w1+w2))
     

@@ -1,8 +1,8 @@
 #################################################
 # Author        : Philip Varghese Modayil
 # Last Update   : 18-06-2025
-# Topic         : Coupled Strip Environment
-# Description  : This script sets up the gymnasium environment for coupled strip optimization.
+# Topic         : Coupled Strip Environment Even Mode
+# Description  : This script sets up the gymnasium environment for coupled strip optimization in Even mode.
 #################################################
 
 #####################################################################################
@@ -79,11 +79,13 @@ class CoupledStripEnv(Env):
             
         | Action          | Min               | Max                | Size       |   
         |-----------------|-------------------|--------------------|------------|
+        | control fcator  | -bound            | bound              | ndarray(5,)|
         | control fcator  | -bound            | bound              | ndarray(4,)|
-        
+        (0,action[0]), (action[1], action[2]), (action[3], action[4]), (s/2,1) => Left side
+        (d,1), (action[5], action[6]), (action[7], action[8]), (a,0) => Right side
         """
         bound: float = 0.2
-        self.action_space: Box = Box(low=-bound, high=bound, shape=(8,), dtype=np.float32) #type:ignore
+        self.action_space: Box = Box(low=-bound, high=bound, shape=(9,), dtype=np.float32) #type:ignore
         self.action_space_bound: float = bound
         """
         Observation Space
@@ -128,11 +130,11 @@ class CoupledStripEnv(Env):
         
         if side == 'left':
             x_end_left: float = self.CSA.space_bw_strps/2
-            P0: NDArray[np.float64] = np.array([0, 0])
-            P10: float = action[0]*x_end_left
-            P1: NDArray[np.float64] = np.array([P10, action[1]])
-            P20: float = action[2]*x_end_left
-            P2: NDArray[np.float64] = np.array([P20, action[3]])
+            P0: NDArray[np.float64] = np.array([0, action[0]])
+            P10: float = action[1]*x_end_left
+            P1: NDArray[np.float64] = np.array([P10, action[2]])
+            P20: float = action[3]*x_end_left
+            P2: NDArray[np.float64] = np.array([P20, action[4]])
             P3: NDArray[np.float64] = np.array([x_end_left, 1])
             
         elif side == 'right':
@@ -358,7 +360,7 @@ class CoupledStripEnv(Env):
         action = np.abs(action) # Bezier curve expects positive values
         
         # Get Bezier curves and get reward
-        mid_point: int = int(self.action_space.shape[0]/2)
+        mid_point: int = self.action_space.shape[0]//2 + 1 # The size is odd
         action_left: NDArray = action[:mid_point]
         action_right: NDArray = action[mid_point:]
         
