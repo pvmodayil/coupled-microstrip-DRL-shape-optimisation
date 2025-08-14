@@ -77,7 +77,7 @@ def predict(env: CoupledStripEnv, model: SAC | BaseAlgorithm) -> NDArray[np.floa
     action: NDArray
     _states: tuple | None
     
-    action, _states = model.predict(obs_space)
+    action, _states = model.predict(obs_space, deterministic=True)
     
     return np.abs(action)
 class IntermediatePredictionCallback(BaseCallback):
@@ -151,7 +151,7 @@ def train(env: CoupledStripEnv,
     logger.info(f"Training ended with total training time: {training_time}......")
     
     # Save the trained model
-    model_save_path: str = os.path.join(model_dir, "SAC_CSA_ODD")
+    model_save_path: str = os.path.join(model_dir, "SAC_CSA_EVEN")
     model.save(model_save_path, include="all")
     
     logger.info(f"Training completed and model saved at {model_save_path}.")      
@@ -168,7 +168,7 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     ########################################################################
     actionD: NDArray = predict(env,model)
     
-    mid_point: int = int(env.action_space.shape[0]/2)
+    mid_point: int = env.action_space.shape[0]//2 + 1
     action_leftD: NDArray = actionD[:mid_point]
     action_rightD: NDArray = actionD[mid_point:]
     
@@ -244,9 +244,9 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     
     epsEff: float = csa_lib.calculate_epsilonEff(cD=CD,cL=CL)
     
-    metrics_data = {
-        "metrics": ['CD','CL','ZD','ZL','epsEff'],
-        "value": [CD,CL,ZD,ZL,epsEff]
+    metrics_data: dict[str, list[str|float]] = {
+        "metrics": ['WD','WL','CD','CL','ZD','ZL','epsEff'],
+        "value": [energyD,energyL,CD,CL,ZD,ZL,epsEff]
     }
     pd.DataFrame(metrics_data).to_excel(os.path.join(image_dir,'prediction_metrics.xlsx'), index=False)
 # main called function
@@ -278,7 +278,7 @@ def main(CSA: CoupledStripArrangement) -> None:
                                  device=device,
                                  timesteps=50000,
                                  intermediate_pred_interval=5000,
-                                 tb_log_name="CSA_ODD")
+                                 tb_log_name="CSA_EVEN")
     
     test(model_path=model_save_path,env=env,image_dir=image_dir)
 
@@ -311,6 +311,6 @@ if __name__ == "__main__":
         er2=4.5, # dielctric constant for medium 2
         num_fs=2000, # number of fourier series coefficients
         num_pts=50, # number of points for the piece wise linear approaximation
-        mode="Odd"
+        mode="Even"
     )
     main(CSA=CSA)
