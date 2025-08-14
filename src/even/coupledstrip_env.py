@@ -306,11 +306,6 @@ class CoupledStripEnv(Env):
         if np.all(action == 0):
             # conditon where no chnage happens
             return MAX_PENALITY
-        left_action_y_coords: NDArray = np.array([action[0], action[2], action[4]])
-        
-        # To Promote Convexity
-        if not csa_lib.is_monotone(g=left_action_y_coords,type="increasing"):
-            return MAX_PENALITY
         
         # Check for monotonicity
         if csa_lib.is_monotone(g=g_left,type="increasing") and csa_lib.is_monotone(g=g_right,type="decreasing"):
