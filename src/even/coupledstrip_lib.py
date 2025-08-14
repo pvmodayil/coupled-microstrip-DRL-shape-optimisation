@@ -183,7 +183,6 @@ def calculate_potential_coeffs(V0: float,
         raises error if the dimensions of the right coordinates don't match
     """
     # Dimensionality check
-    ######################
     if np.size(x_left) != np.size(g_left):
         raise ValueError(f'Dimensions of x-axis vector and g-points vector for left side do not match!\n\
                          size x_left:{np.size(x_left)}, size g_right:{np.size(g_left)}')  
@@ -197,9 +196,9 @@ def calculate_potential_coeffs(V0: float,
     N: float = np.size(g_right)
     d: float = space_bw_strps/2
     
-    n: NDArray[np.int64] = np.arange(1,num_fs+1) # 1xn
+    n: NDArray[np.int64] = np.arange(0,num_fs) # 1xn
     
-    alpha: NDArray[np.float64] = ((n*np.pi)/hw_arra).astype(np.float64) # 1xn
+    beta: NDArray[np.float64] = ((2*n+1)*np.pi/(2*hw_arra)).astype(np.float64) # 1xn
     m: NDArray[np.float64] = (g_left[1:M] - g_left[0:M-1])/(x_left[1:M] - x_left[0:M-1]) # 1xM-1
     m_prime: NDArray[np.float64] = (g_right[1:N] - g_right[0:N-1])/(x_right[1:N] - x_right[0:N-1]) # 1xN-1
     
@@ -210,32 +209,32 @@ def calculate_potential_coeffs(V0: float,
     
     # vn1
     ######
-    vn1: NDArray[np.float64] = (1/alpha**2)*(
-        np.dot(np.ascontiguousarray(m), np.ascontiguousarray(np.sin(alpha*x_left_vec[1:M]) - np.sin(alpha*x_left_vec[0:M-1])))
+    vn1: NDArray[np.float64] = (1/beta**2)*(
+        np.dot(np.ascontiguousarray(m), np.ascontiguousarray(np.cos(beta*x_left_vec[1:M]) - np.cos(beta*x_left_vec[0:M-1])))
     ) # 1xn x [1xM-1 x M-1xn] = 1xn
     
     # vn2
     ######
-    vn2: NDArray[np.float64] = (1/alpha)*(
-        np.dot(np.ascontiguousarray(g_left[0:M-1]), np.ascontiguousarray(np.cos(alpha*x_left_vec[0:M-1])))
-        - np.dot(np.ascontiguousarray(g_left[1:M]), np.ascontiguousarray(np.cos(alpha*x_left_vec[1:M])))
+    vn2: NDArray[np.float64] = (1/beta)*(
+        np.dot(np.ascontiguousarray(g_left[1:M]), np.ascontiguousarray(np.sin(beta*x_left_vec[1:M])))
+        - np.dot(np.ascontiguousarray(g_left[0:M-1]), np.ascontiguousarray(np.sin(beta*x_left_vec[0:M-1])))
     ) # 1xn x [1xM-1 x M-1xn] = 1xn
     
     # vn3
     ######
-    vn3: NDArray[np.float64] = (1/alpha)*(np.cos(alpha*d) - np.cos(alpha*(d+width_micrstr)))
+    vn3: NDArray[np.float64] = (1/beta)*(np.sin(beta*(d+width_micrstr)) - np.sin(beta*d))
     
     # vn4
     ######
-    vn4: NDArray[np.float64] = (1/alpha**2)*(
-        np.dot(np.ascontiguousarray(m_prime), np.ascontiguousarray(np.sin(alpha*x_right_vec[1:N]) - np.sin(alpha*x_right_vec[0:N-1])))
+    vn4: NDArray[np.float64] = (1/beta**2)*(
+        np.dot(np.ascontiguousarray(m_prime), np.ascontiguousarray(np.cos(beta*x_right_vec[1:N]) - np.cos(beta*x_right_vec[0:N-1])))
     ) # 1xn x [1xN-1 x N-1xn] = 1xn
     
     # vn5
     ######
-    vn5: NDArray[np.float64] = (1/alpha)*(
-        np.dot(np.ascontiguousarray(g_right[0:N-1]), np.ascontiguousarray(np.cos(alpha*x_right_vec[0:N-1])))
-        - np.dot(np.ascontiguousarray(g_right[1:N]), np.ascontiguousarray(np.cos(alpha*x_right_vec[1:N])))
+    vn5: NDArray[np.float64] = (1/beta)*(
+        np.dot(np.ascontiguousarray(g_right[1:N]), np.ascontiguousarray(np.sin(beta*x_right_vec[1:N])))
+        - np.dot(np.ascontiguousarray(g_right[0:N-1]), np.ascontiguousarray(np.sin(beta*x_right_vec[0:N-1])))
     ) # 1xn x [1xN-1 x N-1xn] = 1xn
     
     # vn
@@ -267,10 +266,10 @@ def calculate_potential(hw_arra: float,
     """
     num_fs: int = np.size(vn)
     
-    n: NDArray[np.int64] = np.ascontiguousarray(np.arange(1,num_fs+1))[:, np.newaxis] # nx1
-    alpha: NDArray[np.float64] = (n*np.pi/hw_arra).astype(np.float64)
-    sin: NDArray[np.float64] = np.sin(alpha*x) # nxm
-    VF: NDArray[np.float64] = np.dot(np.ascontiguousarray(vn),np.ascontiguousarray(sin)) # 1xn x nxm = 1xm
+    n: NDArray[np.int64] = np.ascontiguousarray(np.arange(0,num_fs))[:, np.newaxis] # nx1
+    beta: NDArray[np.float64] = ((2*n+1)*np.pi/(2*hw_arra)).astype(np.float64) # nx1
+    cos: NDArray[np.float64] = np.cos(beta*x) # nxm
+    VF: NDArray[np.float64] = np.dot(np.ascontiguousarray(vn),np.ascontiguousarray(cos)) # 1xn x nxm = 1xm
     
     return VF.astype(np.float64)
 ######################################################################################
