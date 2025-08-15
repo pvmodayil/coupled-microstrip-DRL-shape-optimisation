@@ -42,7 +42,7 @@ class CoupledStripEnv(Env):
         self.CSA: CoupledStripArrangement = CSA
         
         # Calculate the baseline energy for scaling reward
-        action_left: NDArray = np.zeros(5)
+        action_left: np.ndarray = np.array([0.2, 0.2, 0.1, 0.1, 0.1]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
         action_right: NDArray = np.zeros(4)
         x_left: NDArray
         g_left: NDArray
