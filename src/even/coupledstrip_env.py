@@ -42,7 +42,7 @@ class CoupledStripEnv(Env):
         self.CSA: CoupledStripArrangement = CSA
         
         # Calculate the baseline energy for scaling reward
-        action_left: np.ndarray = np.array([0.5, 0.2, 0.1, 0.1, 0.1]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
+        action_left: np.ndarray = np.array([0.4, 0.2, 0.1, 0.1, 0.1]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
         action_right: NDArray = np.zeros(4)
         x_left: NDArray
         g_left: NDArray
@@ -69,8 +69,9 @@ class CoupledStripEnv(Env):
                                                     ht_arra=self.CSA.ht_arra,
                                                     ht_subs=self.CSA.ht_subs,
                                                     vn=vn)
-        
+        logger.info(f"Initial energy: {self.energy_baseline} VAs")
         self.minimum_energy: NDArray = np.array([np.inf])
+        
         # Define action and observation space
         """
         Action Space
@@ -130,18 +131,18 @@ class CoupledStripEnv(Env):
         
         if side == 'left':
             x_end_left: float = self.CSA.space_bw_strps/2
-            P0Y: float = 0.5 #action[0]
+            P0Y: float = 0.4 #action[0]
             P0: NDArray[np.float64] = np.array([0, P0Y])
             
-            P1X: float = action[1]*x_end_left
-            P1Y: float = P0Y + action[2]*(1-P0Y)
-            P1: NDArray[np.float64] = np.array([P1X, P1Y])
+            P3: NDArray[np.float64] = np.array([x_end_left, 1])
             
-            P2X: float = P1X + action[3]*(x_end_left - P1X)
-            P2Y: float = P1Y + action[4]*(1-P1Y)
+            P2X: float = x_end_left - action[3]*(x_end_left-0)
+            P2Y: float = 1 - action[4](1-P0Y)
             P2: NDArray[np.float64] = np.array([P2X, P2Y])
             
-            P3: NDArray[np.float64] = np.array([x_end_left, 1])
+            P1X: float = P2X - action[1]*(P2X-0)
+            P1Y: float = P2Y - action[2]*(P2Y-P0Y)
+            P1: NDArray[np.float64] = np.array([P1X, P1Y])
             
         elif side == 'right':
             x_start_right: float = self.CSA.space_bw_strps/2 + self.CSA.width_micrstr
