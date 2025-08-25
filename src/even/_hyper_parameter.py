@@ -6,7 +6,7 @@ hyperparams: dict[str, int|float|bool|str] = {
     'learning_rate': 0.0007,               
     'gamma': 0.98,      
     'tau':0.02,
-    'learning_starts':20000,
+    'learning_starts':10000,
     'use_sde':True      
 }
 

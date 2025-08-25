@@ -224,7 +224,7 @@ class CoupledStripEnv(Env):
             bounded scaled reward value
         """
         # For the sigmoid function the steep increase starts around x=-2 (check graphs of sigmoid)
-        sigmoid_val: float = 1/(1+np.exp(-(x-2)))
+        sigmoid_val: float = 1/(1+np.exp(-x))
         
         return sigmoid_val
     
