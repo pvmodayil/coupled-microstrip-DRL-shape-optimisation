@@ -253,7 +253,7 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     pd.DataFrame(metrics_data).to_excel(os.path.join(image_dir,'prediction_metrics.xlsx'), index=False)
 # main called function
 ######################      
-def main(CSA: CoupledStripArrangement) -> None:
+def main(CSA: CoupledStripArrangement, train_timesteps: int) -> None:
     # environment type
     env_type: str = "caseL" if CSA.er2 == 1.0 else "caseD"
     
@@ -278,7 +278,7 @@ def main(CSA: CoupledStripArrangement) -> None:
                                  log_dir=log_dir, 
                                  intermediate_pred_dir=intermediate_pred_dir,
                                  device=device,
-                                 timesteps=50000,
+                                 timesteps=train_timesteps,
                                  intermediate_pred_interval=5000,
                                  tb_log_name="CSA_EVEN")
     
@@ -315,4 +315,4 @@ if __name__ == "__main__":
         num_pts=50, # number of points for the piece wise linear approaximation
         mode="Even"
     )
-    main(CSA=CSA)
+    main(CSA=CSA, train_timesteps=100_000)

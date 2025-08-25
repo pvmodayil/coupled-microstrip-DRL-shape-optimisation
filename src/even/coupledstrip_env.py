@@ -85,7 +85,7 @@ class CoupledStripEnv(Env):
         (0,action[0]), (action[1], action[2]), (action[3], action[4]), (s/2,1) => Left side
         (d,1), (action[5], action[6]), (action[7], action[8]), (a,0) => Right side
         """
-        bound: float = 0.8
+        bound: float = 1
         self.action_space: Box = Box(low=-bound, high=bound, shape=(8,), dtype=np.float32) #type:ignore
         self.action_space_bound: float = bound
         """
@@ -224,7 +224,7 @@ class CoupledStripEnv(Env):
             bounded scaled reward value
         """
         # For the sigmoid function the steep increase starts around x=-2 (check graphs of sigmoid)
-        sigmoid_val: float = 1/(1+np.exp(-x))
+        sigmoid_val: float = 1/(1+np.exp(-(x-2)))
         
         return sigmoid_val
     
