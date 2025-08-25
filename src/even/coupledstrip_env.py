@@ -137,7 +137,7 @@ class CoupledStripEnv(Env):
             P3: NDArray[np.float64] = np.array([x_end_left, 1])
             
             P2X: float = x_end_left - action[3]*(x_end_left-0)
-            P2Y: float = 1 - action[4](1-P0Y)
+            P2Y: float = 1 - action[4]*(1-P0Y)
             P2: NDArray[np.float64] = np.array([P2X, P2Y])
             
             P1X: float = P2X - action[1]*(P2X-0)
