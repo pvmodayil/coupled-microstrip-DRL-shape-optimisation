@@ -253,8 +253,8 @@ if __name__ == "__main__":
         er2=4.5, # dielctric constant for medium 2
         num_fs=1000, # number of fourier series coefficients
         num_pts=30, # number of points for the piece wise linear approaximation
-        mode="Odd"
+        mode="Even"
     )
     
-    model_path = os.path.join("training","Odd","caseD","models","SAC_CSA_ODD.zip")
+    model_path = os.path.join("training","Even","caseD","models","SAC_CSA_EVEN.zip")
     main(CSA=CSA,model_path=model_path)
