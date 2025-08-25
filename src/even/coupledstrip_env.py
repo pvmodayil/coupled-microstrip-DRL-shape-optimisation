@@ -42,7 +42,7 @@ class CoupledStripEnv(Env):
         self.CSA: CoupledStripArrangement = CSA
         
         # Calculate the baseline energy for scaling reward
-        action_left: np.ndarray = np.array([0.3, 0.2, 0.1, 0.1, 0.1]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
+        action_left: np.ndarray = np.array([0.1, 0.1, 0.1, 0.1]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
         action_right: NDArray = np.zeros(4)
         x_left: NDArray
         g_left: NDArray
@@ -85,8 +85,8 @@ class CoupledStripEnv(Env):
         (0,action[0]), (action[1], action[2]), (action[3], action[4]), (s/2,1) => Left side
         (d,1), (action[5], action[6]), (action[7], action[8]), (a,0) => Right side
         """
-        bound: float = 0.5
-        self.action_space: Box = Box(low=-bound, high=bound, shape=(9,), dtype=np.float32) #type:ignore
+        bound: float = 0.8
+        self.action_space: Box = Box(low=-bound, high=bound, shape=(8,), dtype=np.float32) #type:ignore
         self.action_space_bound: float = bound
         """
         Observation Space
@@ -131,17 +131,17 @@ class CoupledStripEnv(Env):
         
         if side == 'left':
             x_end_left: float = self.CSA.space_bw_strps/2
-            P0Y: float = action[0]
+            P0Y: float = 0.4 #action[0]
             P0: NDArray[np.float64] = np.array([0, P0Y])
             
             P3: NDArray[np.float64] = np.array([x_end_left, 1])
             
-            P2X: float = x_end_left - action[3]*(x_end_left-0)
-            P2Y: float = 1 - action[4]*(1-P0Y)
+            P2X: float = x_end_left - action[0]*(x_end_left-0)
+            P2Y: float = 1 - action[1]*(1-P0Y)
             P2: NDArray[np.float64] = np.array([P2X, P2Y])
             
-            P1X: float = P2X - action[1]*(P2X-0)
-            P1Y: float = P2Y - action[2]*(P2Y-P0Y)
+            P1X: float = P2X - action[2]*(P2X-0)
+            P1Y: float = P2Y - action[3]*(P2Y-P0Y)
             P1: NDArray[np.float64] = np.array([P1X, P1Y])
             
         elif side == 'right':
@@ -373,7 +373,7 @@ class CoupledStripEnv(Env):
         action = np.abs(action) # Bezier curve expects positive values
         
         # Get Bezier curves and get reward
-        mid_point: int = self.action_space.shape[0]//2 + 1 # The size is odd
+        mid_point: int = self.action_space.shape[0]//2 # The size is odd
         action_left: NDArray = action[:mid_point]
         action_right: NDArray = action[mid_point:]
         
