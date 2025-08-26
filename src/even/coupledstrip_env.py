@@ -327,10 +327,10 @@ class CoupledStripEnv(Env):
                 reward_boost = 0.5
                 
             # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
-            penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
-                        + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR   
+            constraint: float = self._soft_plus(MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
+                        + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR)   
             # Squashing to the bounds of [0,1]
-            reward = self._soft_plus((self.energy_baseline/energy) + reward_boost + penality) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
+            reward = self._soft_plus((self.energy_baseline/energy) + reward_boost + constraint) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
         else:
             # Max val = -1 + 2/4 = -0.5
             penality = MAX_PENALITY + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
