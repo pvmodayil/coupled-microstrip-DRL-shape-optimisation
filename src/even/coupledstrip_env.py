@@ -224,7 +224,7 @@ class CoupledStripEnv(Env):
             bounded scaled reward value
         """
         # For the sigmoid function the steep increase starts around x=-2 (check graphs of sigmoid)
-        sigmoid_val: float = 1/(1+np.exp(-x))
+        sigmoid_val: float = 1/(1+np.exp(-0.5*x))
         
         return sigmoid_val
     
@@ -302,6 +302,8 @@ class CoupledStripEnv(Env):
         # each check will have max value 1 so total max will be 2, need it to be constarined to 0.5 so that each check contributes +0.5 from MAX_PENALITY
         SCALING_FACTOR: float = 0.25 
         reward: float
+        penality: float
+        reward_boost: float = 0
         
         # To promote some change
         if np.all(action == 0):
@@ -315,17 +317,27 @@ class CoupledStripEnv(Env):
                                                       x_left=x_left,
                                                       g_right=g_right,
                                                       x_right=x_right)
+                if energy < self.minimum_energy[-1]:
+                    self.minimum_energy = np.append(self.minimum_energy, energy)
+                    reward_boost+=0.5
+                    
                 # Squashing to the bounds of [0,1]
-                reward = self._logistic_sigmoid(self.energy_baseline/energy) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
-            
+                reward = self._logistic_sigmoid((self.energy_baseline/energy)+reward_boost) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
+                
             else:
+                energy: float = self.calculate_energy(g_left=g_left,
+                                                      x_left=x_left,
+                                                      g_right=g_right,
+                                                      x_right=x_right)
                 # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
-                reward = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
+                penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
                             + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR
+                reward = self._logistic_sigmoid((self.energy_baseline/energy) - penality)
         else:
             # Max val = -1 + 2/4 = -0.5
-            reward = MAX_PENALITY + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
+            penality = MAX_PENALITY + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
                            + csa_lib.degree_monotonicity(g=g_right,type='decreasing')/self.CSA.num_pts)*SCALING_FACTOR
+            reward = self._logistic_sigmoid(penality)
                 
         return reward
     
