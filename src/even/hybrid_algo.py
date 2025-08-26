@@ -84,7 +84,7 @@ def possible_range(lower_bound: float, upper_bound: float) -> NDArray:
 def evaluate(env: CoupledStripEnv, model: SAC, new_hw_arra: float) -> float:
     env.CSA.hw_arra = new_hw_arra
     action: NDArray = predict(env=env, model=model)
-    mid_point: int = env.action_space.shape[0]//2
+    mid_point: int = env.action_space.shape[0]//2 + 1 
 
     x_left,g_left,_control = env.get_bezier_curve(action=action[:mid_point],side='left')
     x_right,g_right,_control = env.get_bezier_curve(action=action[mid_point:],side='right')
@@ -160,7 +160,7 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
     env.CSA.hw_arra = optimal_hw_arra(env=env, model=model, image_dir=image_dir, case=case)
     
     action: NDArray = predict(env=env, model=model)
-    mid_point: int = env.action_space.shape[0]//2
+    mid_point: int = env.action_space.shape[0]//2 + 1
 
     x_left,g_left,_control = env.get_bezier_curve(action=action[:mid_point],side='left')
     x_right,g_right,_control = env.get_bezier_curve(action=action[mid_point:],side='right')
