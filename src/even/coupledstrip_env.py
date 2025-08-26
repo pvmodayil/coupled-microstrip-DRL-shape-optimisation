@@ -269,6 +269,32 @@ class CoupledStripEnv(Env):
                                                 vn=vn)
         return energy
     
+    def _soft_plus(self, x: float, beta: float = 1.0, threshold: float = 20.0) -> float:
+        """
+        _soft_plus 
+        
+        Function to smoothen the rewards for better gradient
+        
+        Parameters
+        ----------
+        x : float
+            raw reward value
+        beta : float, optional
+            scaling factor, by default 1.0
+        threshold : float, optional
+            threshold to prevent overflow, by default 20.0
+
+        Returns
+        -------
+        float
+            smoothened reward value
+        """
+        x_beta: float = beta * x
+        if x_beta > threshold:
+            return x_beta  # avoid overflow exp for large x
+        else:
+            return (1 / beta) * np.log1p(np.exp(x_beta))
+        
     def get_reward(self,
             action: NDArray[np.float64],
             g_left: NDArray[np.float64], 
@@ -312,32 +338,24 @@ class CoupledStripEnv(Env):
         
         # Check for monotonicity
         if csa_lib.is_monotone(g=g_left,type="increasing") and csa_lib.is_monotone(g=g_right,type="decreasing"):
-            if csa_lib.is_convex(g=g_left) and csa_lib.is_convex(g=g_right):
-                energy: float = self.calculate_energy(g_left=g_left,
-                                                      x_left=x_left,
-                                                      g_right=g_right,
-                                                      x_right=x_right)
-                if energy < self.minimum_energy[-1]:
-                    self.minimum_energy = np.append(self.minimum_energy, energy)
-                    reward_boost+=0.5
-                    
-                # Squashing to the bounds of [0,1]
-                reward = self._logistic_sigmoid((self.energy_baseline/energy)+reward_boost) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
+            energy: float = self.calculate_energy(g_left=g_left,
+                                                    x_left=x_left,
+                                                    g_right=g_right,
+                                                    x_right=x_right)
+            if energy < self.minimum_energy[-1]:
+                self.minimum_energy = np.append(self.minimum_energy, energy)
+                reward_boost = 0.5
                 
-            else:
-                energy: float = self.calculate_energy(g_left=g_left,
-                                                      x_left=x_left,
-                                                      g_right=g_right,
-                                                      x_right=x_right)
-                # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
-                penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
-                            + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR
-                reward = self._logistic_sigmoid((self.energy_baseline/energy) - penality)
+            # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
+            penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
+                        + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR   
+            # Squashing to the bounds of [0,1]
+            reward = self._soft_plus((self.energy_baseline/energy) + reward_boost + penality) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
         else:
             # Max val = -1 + 2/4 = -0.5
             penality = MAX_PENALITY + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
                            + csa_lib.degree_monotonicity(g=g_right,type='decreasing')/self.CSA.num_pts)*SCALING_FACTOR
-            reward = self._logistic_sigmoid(penality)
+            reward = penality
                 
         return reward
     
