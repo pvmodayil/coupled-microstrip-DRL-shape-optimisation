@@ -86,7 +86,7 @@ class CoupledStripEnv(Env):
         (d,1), (action[5], action[6]), (action[7], action[8]), (a,0) => Right side
         """
         bound: float = 0.8
-        self.action_space: Box = Box(low=-bound, high=bound, shape=(8,), dtype=np.float32) #type:ignore
+        self.action_space: Box = Box(low=-bound, high=bound, shape=(9,), dtype=np.float32) #type:ignore
         self.action_space_bound: float = bound
         """
         Observation Space
@@ -131,17 +131,17 @@ class CoupledStripEnv(Env):
         
         if side == 'left':
             x_end_left: float = self.CSA.space_bw_strps/2
-            P0Y: float = 0.4 #action[0]
+            P0Y: float = action[0]
             P0: NDArray[np.float64] = np.array([0, P0Y])
             
             P3: NDArray[np.float64] = np.array([x_end_left, 1])
             
-            P2X: float = x_end_left - action[0]*(x_end_left-0)
-            P2Y: float = 1 - action[1]*(1-P0Y)
+            P2X: float = x_end_left - action[1]*(x_end_left-0)
+            P2Y: float = 1 - action[2]*(1-P0Y)
             P2: NDArray[np.float64] = np.array([P2X, P2Y])
             
-            P1X: float = P2X - action[2]*(P2X-0)
-            P1Y: float = P2Y - action[3]*(P2Y-P0Y)
+            P1X: float = P2X - action[3]*(P2X-0)
+            P1Y: float = P2Y - action[4]*(P2Y-P0Y)
             P1: NDArray[np.float64] = np.array([P1X, P1Y])
             
         elif side == 'right':
@@ -207,26 +207,6 @@ class CoupledStripEnv(Env):
         y_coords: NDArray[np.float64] = curve_points[:, 1]
         
         return x_coords,y_coords,control_points
-    
-    def _logistic_sigmoid(self, x: float) -> float:
-        """
-        Function to calculate the logistic sigmoid function value.
-        Used to bound the rewards.
-
-        Parameters
-        ----------
-        x : float
-            raw rewward value
-
-        Returns
-        -------
-        float
-            bounded scaled reward value
-        """
-        # For the sigmoid function the steep increase starts around x=-2 (check graphs of sigmoid)
-        sigmoid_val: float = 1/(1+np.exp(-0.5*x))
-        
-        return sigmoid_val
     
     def calculate_energy(self,
             g_left: NDArray[np.float64], 
@@ -403,7 +383,7 @@ class CoupledStripEnv(Env):
         action = np.abs(action) # Bezier curve expects positive values
         
         # Get Bezier curves and get reward
-        mid_point: int = self.action_space.shape[0]//2 # The size is odd
+        mid_point: int = self.action_space.shape[0]//2 + 1# The size is odd
         action_left: NDArray = action[:mid_point]
         action_right: NDArray = action[mid_point:]
         
