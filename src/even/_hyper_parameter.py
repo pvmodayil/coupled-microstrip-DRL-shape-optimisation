@@ -1,7 +1,7 @@
 policy_kwargs: dict[str, int | list[int]] = dict(log_std_init=-3, net_arch=[400, 300]) # setting nn architecture
 hyperparams: dict[str, int|float|bool|str] = {
-    'ent_coef': 'auto',  # setting entropy coefficient to auto boosts exploration
-    'target_entropy':-8,
+    'ent_coef': 0.2,  # setting entropy coefficient to auto boosts exploration
+    'target_entropy':-9,
     'batch_size':512,  
     'buffer_size': 20000,        
     'learning_rate': 0.0007,               
