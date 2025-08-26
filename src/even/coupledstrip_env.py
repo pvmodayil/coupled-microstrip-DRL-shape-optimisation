@@ -306,7 +306,8 @@ class CoupledStripEnv(Env):
         MAX_PENALITY: float = -1
         MAX_CONVEXITY_PENALITY: float = -0.5
         # each check will have max value 1 so total max will be 2, need it to be constarined to 0.5 so that each check contributes +0.5 from MAX_PENALITY
-        SCALING_FACTOR: float = 0.25 
+        SCALING_FACTOR: float = 0.25
+        CONSTRAINT_SCALING_FACTOR: float = 2 
         reward: float
         penality: float
         reward_boost: float = 0
@@ -323,12 +324,13 @@ class CoupledStripEnv(Env):
                                                     g_right=g_right,
                                                     x_right=x_right)
             if energy < self.minimum_energy[-1]:
+                logger.info(f"New minimum energy obtained: {energy} VAs\n")
                 self.minimum_energy = np.append(self.minimum_energy, energy)
                 reward_boost = 0.5
                 
             # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
             constraint: float = self._soft_plus(MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
-                        + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR)   
+                        + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR)*CONSTRAINT_SCALING_FACTOR   
             # Squashing to the bounds of [0,1]
             reward = self._soft_plus((self.energy_baseline/energy) + reward_boost + constraint) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
         else:
