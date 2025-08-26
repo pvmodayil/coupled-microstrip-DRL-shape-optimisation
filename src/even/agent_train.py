@@ -315,4 +315,4 @@ if __name__ == "__main__":
         num_pts=50, # number of points for the piece wise linear approaximation
         mode="Even"
     )
-    main(CSA=CSA, train_timesteps=15_000)
+    main(CSA=CSA, train_timesteps=50_000)
