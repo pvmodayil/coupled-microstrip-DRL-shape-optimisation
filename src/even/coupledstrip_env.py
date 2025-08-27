@@ -71,6 +71,7 @@ class CoupledStripEnv(Env):
                                                     vn=vn)
         logger.info(f"Initial energy: {self.energy_baseline} VAs")
         self.minimum_energy: NDArray = np.array([np.inf])
+        self.energy_calculation_count: int = 0
         
         # Define action and observation space
         """
@@ -323,10 +324,14 @@ class CoupledStripEnv(Env):
                                                     x_left=x_left,
                                                     g_right=g_right,
                                                     x_right=x_right)
-            if energy < self.minimum_energy[-1]:
+            
+            if (energy < self.minimum_energy[-1]) and (self.energy_calculation_count == 1):
                 logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action[0]} \n")
                 self.minimum_energy = np.append(self.minimum_energy, energy)
                 reward_boost = 4
+            
+            if self.energy_calculation_count == 0:
+                self.energy_calculation_count = 1
                 
             # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
             constraint: float = self._soft_plus(MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 

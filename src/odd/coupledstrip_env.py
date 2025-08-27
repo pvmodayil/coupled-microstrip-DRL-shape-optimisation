@@ -320,7 +320,7 @@ class CoupledStripEnv(Env):
                                                     g_right=g_right,
                                                     x_right=x_right)
             if energy < self.minimum_energy[-1]:
-                logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action[0]} \n")
+                logger.info(f"New minimum energy obtained: {energy} VAs\n")
                 self.minimum_energy = np.append(self.minimum_energy, energy)
                 reward_boost = 4
                 
