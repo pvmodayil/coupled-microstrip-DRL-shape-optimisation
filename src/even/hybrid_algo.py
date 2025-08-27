@@ -243,10 +243,10 @@ def main(CSA: CoupledStripArrangement, model_path: str) -> None:
 if __name__ == "__main__":
     CSA: CoupledStripArrangement = CoupledStripArrangement(
         V0=1., # Potential of the sytem, used to scale the system which is defaulted at V0=1.0
-        hw_arra=3.5E-3, # half width of the arrangement, parameter a
+        hw_arra=3.6E-3, # half width of the arrangement, parameter a
         ht_arra=2.76E-3, # height of the arrangement, parameter b
         ht_subs=112E-6, # height of the substrate, parameter h
-        space_bw_strps=500E-6, # gap between the two microstrips, parameter s
+        space_bw_strps=600E-6, # gap between the two microstrips, parameter s
         width_micrstr=150E-6, # width of the microstrip, parameter w
         ht_micrstr=0, # height of the microstripm, parameter t
         er1=1.0, # dielectric constatnt for medium 1
