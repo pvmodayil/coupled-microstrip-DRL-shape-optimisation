@@ -251,6 +251,7 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
         "value": [energyD,energyL,CD,CL,ZD,ZL,epsEff]
     }
     pd.DataFrame(metrics_data).to_excel(os.path.join(image_dir,'prediction_metrics.xlsx'), index=False)
+    
 # main called function
 ######################      
 def main(CSA: CoupledStripArrangement, train_timesteps: int) -> None:

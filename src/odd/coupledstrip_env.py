@@ -82,7 +82,7 @@ class CoupledStripEnv(Env):
         | control fcator  | -bound            | bound              | ndarray(4,)|
         
         """
-        bound: float = 0.2
+        bound: float = 0.8
         self.action_space: Box = Box(low=-bound, high=bound, shape=(8,), dtype=np.float32) #type:ignore
         self.action_space_bound: float = bound
         """
@@ -129,19 +129,29 @@ class CoupledStripEnv(Env):
         if side == 'left':
             x_end_left: float = self.CSA.space_bw_strps/2
             P0: NDArray[np.float64] = np.array([0, 0])
-            P10: float = action[0]*x_end_left
-            P1: NDArray[np.float64] = np.array([P10, action[1]])
-            P20: float = action[2]*x_end_left
-            P2: NDArray[np.float64] = np.array([P20, action[3]])
+            
             P3: NDArray[np.float64] = np.array([x_end_left, 1])
+            
+            P2X: float = x_end_left - action[0]*(x_end_left-0)
+            P2Y: float = 1 - action[1]*(1-0)
+            P2: NDArray[np.float64] = np.array([P2X, P2Y])
+            
+            P1X: float = P2X - action[2]*(P2X-0)
+            P1Y: float = P2Y - action[3]*(P2Y-0)
+            P1: NDArray[np.float64] = np.array([P1X, P1Y])
             
         elif side == 'right':
             x_start_right: float = self.CSA.space_bw_strps/2 + self.CSA.width_micrstr
             P0: NDArray[np.float64] = np.array([x_start_right, 1])
-            P10: float = x_start_right + action[0]*(self.CSA.hw_arra-x_start_right)
-            P1: NDArray[np.float64] = np.array([P10, action[1]])
-            P20: float = x_start_right + action[2]*(self.CSA.hw_arra-x_start_right)
-            P2: NDArray[np.float64] = np.array([P20, action[3]])
+            
+            P1X: float = x_start_right + action[0]*(self.CSA.hw_arra-x_start_right)
+            P1Y: float = action[1]
+            P1: NDArray[np.float64] = np.array([P1X, P1Y])
+           
+            P2X: float = P1X + action[2]*(self.CSA.hw_arra-P1X)
+            P2Y: float = P1Y - action[3]*(P1Y - 0)
+            P2: NDArray[np.float64] = np.array([P2X, P2Y])
+            
             P3: NDArray[np.float64] = np.array([self.CSA.hw_arra, 0])
             
         else:
@@ -194,26 +204,6 @@ class CoupledStripEnv(Env):
         
         return x_coords,y_coords,control_points
     
-    def _logistic_sigmoid(self, x: float) -> float:
-        """
-        Function to calculate the logistic sigmoid function value.
-        Used to bound the rewards.
-
-        Parameters
-        ----------
-        x : float
-            raw rewward value
-
-        Returns
-        -------
-        float
-            bounded scaled reward value
-        """
-        # For the sigmoid function the steep increase starts around x=-2 (check graphs of sigmoid)
-        sigmoid_val: float = 1/(1+np.exp(-x))
-        
-        return sigmoid_val
-    
     def calculate_energy(self,
             g_left: NDArray[np.float64], 
             x_left: NDArray[np.float64],
@@ -255,6 +245,32 @@ class CoupledStripEnv(Env):
                                                 vn=vn)
         return energy
     
+    def _soft_plus(self, x: float, beta: float = 1.0, threshold: float = 20.0) -> float:
+        """
+        _soft_plus 
+        
+        Function to smoothen the rewards for better gradient
+        
+        Parameters
+        ----------
+        x : float
+            raw reward value
+        beta : float, optional
+            scaling factor, by default 1.0
+        threshold : float, optional
+            threshold to prevent overflow, by default 20.0
+
+        Returns
+        -------
+        float
+            smoothened reward value
+        """
+        x_beta: float = beta * x
+        if x_beta > threshold:
+            return x_beta  # avoid overflow exp for large x
+        else:
+            return (1 / beta) * np.log1p(np.exp(x_beta))
+        
     def get_reward(self,
             action: NDArray[np.float64],
             g_left: NDArray[np.float64], 
@@ -286,31 +302,38 @@ class CoupledStripEnv(Env):
         MAX_PENALITY: float = -1
         MAX_CONVEXITY_PENALITY: float = -0.5
         # each check will have max value 1 so total max will be 2, need it to be constarined to 0.5 so that each check contributes +0.5 from MAX_PENALITY
-        SCALING_FACTOR: float = 0.25 
+        SCALING_FACTOR: float = 0.25
+        CONSTRAINT_SCALING_FACTOR: float = 2 
         reward: float
+        penality: float
+        reward_boost: float = 1
         
         # To promote some change
         if np.all(action == 0):
             # conditon where no chnage happens
             return MAX_PENALITY
+        
         # Check for monotonicity
         if csa_lib.is_monotone(g=g_left,type="increasing") and csa_lib.is_monotone(g=g_right,type="decreasing"):
-            if csa_lib.is_convex(g=g_left) and csa_lib.is_convex(g=g_right):
-                energy: float = self.calculate_energy(g_left=g_left,
-                                                      x_left=x_left,
-                                                      g_right=g_right,
-                                                      x_right=x_right)
-                # Squashing to the bounds of [0,1]
-                reward = self._logistic_sigmoid(self.energy_baseline/energy) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
-            
-            else:
-                # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
-                reward = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
-                            + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR
+            energy: float = self.calculate_energy(g_left=g_left,
+                                                    x_left=x_left,
+                                                    g_right=g_right,
+                                                    x_right=x_right)
+            if energy < self.minimum_energy[-1]:
+                logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action[0]} \n")
+                self.minimum_energy = np.append(self.minimum_energy, energy)
+                reward_boost = 4
+                
+            # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
+            constraint: float = self._soft_plus(MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
+                        + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR)*CONSTRAINT_SCALING_FACTOR   
+            # Squashing to the bounds of [0,1]
+            reward = self._soft_plus((self.energy_baseline/energy)*reward_boost + constraint) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
         else:
             # Max val = -1 + 2/4 = -0.5
-            reward = MAX_PENALITY + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
+            penality = MAX_PENALITY + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
                            + csa_lib.degree_monotonicity(g=g_right,type='decreasing')/self.CSA.num_pts)*SCALING_FACTOR
+            reward = penality
                 
         return reward
     
@@ -358,7 +381,7 @@ class CoupledStripEnv(Env):
         action = np.abs(action) # Bezier curve expects positive values
         
         # Get Bezier curves and get reward
-        mid_point: int = int(self.action_space.shape[0]/2)
+        mid_point: int = self.action_space.shape[0]//2
         action_left: NDArray = action[:mid_point]
         action_right: NDArray = action[mid_point:]
         

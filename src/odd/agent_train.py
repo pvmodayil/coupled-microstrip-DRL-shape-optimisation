@@ -168,7 +168,7 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     ########################################################################
     actionD: NDArray = predict(env,model)
     
-    mid_point: int = int(env.action_space.shape[0]/2)
+    mid_point: int = env.action_space.shape[0]//2 + 1
     action_leftD: NDArray = actionD[:mid_point]
     action_rightD: NDArray = actionD[mid_point:]
     
@@ -205,7 +205,7 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     env.CSA.er2 = 1.0
     actionL: NDArray = predict(env,model)
     
-    mid_point: int = int(env.action_space.shape[0]/2)
+    mid_point: int = env.action_space.shape[0]//2 + 1
     action_leftL: NDArray = actionL[:mid_point]
     action_rightL: NDArray = actionL[mid_point:]
     
@@ -246,11 +246,12 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     
     epsEff: float = csa_lib.calculate_epsilonEff(cD=CD,cL=CL)
     
-    metrics_data = {
-        "metrics": ['CD','CL','ZD','ZL','epsEff'],
-        "value": [CD,CL,ZD,ZL,epsEff]
+    metrics_data: dict[str, list[str|float]] = {
+        "metrics": ['WD','WL','CD','CL','ZD','ZL','epsEff'],
+        "value": [energyD,energyL,CD,CL,ZD,ZL,epsEff]
     }
     pd.DataFrame(metrics_data).to_excel(os.path.join(image_dir,'prediction_metrics.xlsx'), index=False)
+    
 # main called function
 ######################      
 def main(CSA: CoupledStripArrangement) -> None:
