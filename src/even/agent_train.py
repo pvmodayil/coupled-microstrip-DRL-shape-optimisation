@@ -46,9 +46,10 @@ def create_directories(**kwargs) -> None:
     for dir_name in kwargs.values():
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
-            logger.info(f"Created directory: {dir_name}")
+            # logger.info(f"Created directory: {dir_name}")
         else:
-            print(f"Directory already exists: {dir_name}")
+            pass
+            # logger.info(f"Directory already exists: {dir_name}")
 
 
 
