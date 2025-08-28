@@ -128,7 +128,7 @@ namespace GA{
         population_right.noalias() += random_noise_right;
 
         // Limit the initial population within the boundary(0 to 1, as the curves are always scaled to be in this range)
-        population_left = population_left.array().min(1).max(0).matrix();
+        population_left = population_left.array().min(1).max(1e-2).matrix();
         population_right = population_right.array().min(1).max(0).matrix();
 
     }
@@ -143,7 +143,6 @@ namespace GA{
         size_t vector_size = individual_left.size();
 
         // Since the entire curve is given for the crossover make sure the boundary values are correct
-        individual_left(0) = 0.0;
         individual_left(vector_size-1) = 1.0;
         individual_right(0) = 1.0;
         individual_right(vector_size-1) = 0.0;
@@ -281,7 +280,7 @@ namespace GA{
         }
 
         // Limit the initial population within the boundary(0 to 1, as the curves are always scaled to be in this range)
-        new_population_left = new_population_left.array().min(1).max(0).matrix();
+        new_population_left = new_population_left.array().min(1).max(1e-2).matrix();
         new_population_right = new_population_right.array().min(1).max(0).matrix();
         
         // Reset the values of population with new population
@@ -360,7 +359,6 @@ namespace GA{
         best_energy = fitness_array.minCoeff(&best_index); // Get the best energy of the last generation
         
         result.best_curve_left = delta_to_curve(population_left.col(best_index), vector_size, false); // Store the best curve of the last generation
-        result.best_curve_left(0) = 0.0;
         result.best_curve_left(vector_size-1) = 1.0;
 
         result.best_curve_right = delta_to_curve(population_right.col(best_index), vector_size, true);
