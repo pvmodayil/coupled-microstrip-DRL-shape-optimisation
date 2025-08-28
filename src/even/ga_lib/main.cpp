@@ -104,7 +104,7 @@ int main(){
     Eigen::ArrayXd g_rightD = Eigen::Map<const Eigen::ArrayXd>(dataD["g_right"].data(), dataD["g_right"].size()); // Mx1
 
     int population_size = 100;
-    int num_generations = 100;
+    int num_generations = 1000;
     GA::GAResult resultD = ga_optimize(V0,space_bw_strps,width_micrstr,ht_micrstr,hw_arra,ht_arra,ht_subs,er1,er2,num_fs,population_size,num_generations,
     x_leftD,g_leftD,x_rightD,g_rightD);
     
