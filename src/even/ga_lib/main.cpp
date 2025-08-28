@@ -162,9 +162,9 @@ int main(){
     std::vector<double> result_vec_rightL(resultL.best_curve_right.data(), resultL.best_curve_right.data() + resultL.best_curve_right.size());
     std::unordered_map<std::string, std::vector<double>> result_dataL;
     result_dataL["x_left"] = dataL["x_left"];
-    result_dataL["g_left"] = result_vec_leftD;
+    result_dataL["g_left"] = result_vec_leftL;
     result_dataL["x_right"] = dataL["x_right"];
-    result_dataL["g_right"] = result_vec_rightD;
+    result_dataL["g_right"] = result_vec_rightL;
     curve_output_filename = "../data/CaseL_optimized_curve.csv";
     fileio::write_csv(curve_output_filename, result_dataL);
 
