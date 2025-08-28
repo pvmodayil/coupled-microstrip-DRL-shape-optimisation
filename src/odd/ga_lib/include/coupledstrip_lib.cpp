@@ -105,7 +105,7 @@ namespace CSA{
         double N = g_right.size();
         double d = space_bw_strps/2;
 
-        Eigen::ArrayXd n = (Eigen::ArrayXd::LinSpaced(num_fs, 1, num_fs)); // nx1
+        Eigen::ArrayXd n = (Eigen::ArrayXd::LinSpaced(num_fs, 1, num_fs+1)); // nx1
 
         Eigen::ArrayXd alpha = n*PI/hw_arra; // nx1
 
