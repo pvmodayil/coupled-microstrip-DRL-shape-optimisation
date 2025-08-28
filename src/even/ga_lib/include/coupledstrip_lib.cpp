@@ -105,9 +105,9 @@ namespace CSA{
         double N = g_right.size();
         double d = space_bw_strps/2;
 
-        Eigen::ArrayXd n = (Eigen::ArrayXd::LinSpaced(num_fs, 1, num_fs)); // nx1
+        Eigen::ArrayXd n = (Eigen::ArrayXd::LinSpaced(num_fs, 0, num_fs-1)); // nx1
 
-        Eigen::ArrayXd alpha = n*PI/hw_arra; // nx1
+        Eigen::ArrayXd beta = (2*n+1)*PI/(2*hw_arra); // nx1
 
         Eigen::ArrayXd m = (g_left.bottomRows(M-1) - g_left.topRows(M-1)) /
                         (x_left.bottomRows(M-1) - x_left.topRows(M-1)); // M-1x1
@@ -119,50 +119,50 @@ namespace CSA{
         // vn1
         //=========================
         // This calculation results in 2D so the .array() should be maped to ArrayXXd datatype , here a final .matrix will do the job
-        Eigen::MatrixXd sin_left = ((alpha.matrix() * x_left.bottomRows(M-1).matrix().transpose()).array().sin()
-                                    - (alpha.matrix() * x_left.topRows(M-1).matrix().transpose()).array().sin()).matrix(); // nx1 x 1xM-1 = nxM-1
+        Eigen::MatrixXd cos_left = ((beta.matrix() * x_left.bottomRows(M-1).matrix().transpose()).array().cos()
+                                    - (beta.matrix() * x_left.topRows(M-1).matrix().transpose()).array().cos()).matrix(); // nx1 x 1xM-1 = nxM-1
         
-        Eigen::ArrayXd vn1 = (1/alpha.square())*(
-            (sin_left * m.matrix()).array()
+        Eigen::ArrayXd vn1 = (1/beta.square())*(
+            (cos_left * m.matrix()).array()
         ); // nx1 x (nxM-1 x M-1x1) = nx1
 
         // vn2
         //=========================
-        Eigen::ArrayXd vn2 = (1/alpha)*(
+        Eigen::ArrayXd vn2 = (1/beta)*(
             ( 
-            ((alpha.matrix() * x_left.topRows(M-1).matrix().transpose()).array().cos()).matrix()
-            * g_left.topRows(M-1).matrix()
+            ((beta.matrix() * x_left.bottomRows(M-1).matrix().transpose()).array().sin()).matrix()
+            * g_left.bottomRows(M-1).matrix()
             ).array()
             - ( 
-            ((alpha.matrix() * x_left.bottomRows(M-1).matrix().transpose()).array().cos()).matrix()
-            * g_left.bottomRows(M-1).matrix()
+            ((beta.matrix() * x_left.topRows(M-1).matrix().transpose()).array().sin()).matrix()
+            * g_left.topRows(M-1).matrix()
             ).array()
         ); // nx1 x (cos(nx1 x 1XM-1) x M-1x1) = nx1
 
         // vn3
         //=========================
-        Eigen::ArrayXd vn3 = (1/alpha)*(
-            (alpha*d).cos() - (alpha*(d+width_micrstr)).cos()
+        Eigen::ArrayXd vn3 = (1/beta)*(
+            (beta*(d+width_micrstr)).sin() - (beta*d).sin()
         ); // nx1
 
         // vn4
         //=========================
-        Eigen::MatrixXd sin_right = ((alpha.matrix() * x_right.bottomRows(N-1).matrix().transpose()).array().sin()
-                                    - (alpha.matrix() * x_right.topRows(N-1).matrix().transpose()).array().sin()).matrix(); // nx1 x 1xM-1 = nxM-1
-        Eigen::ArrayXd vn4 = (1/alpha.square())*(
-            (sin_right.matrix() * m_prime.matrix()).array()
+        Eigen::MatrixXd cos_right = ((beta.matrix() * x_right.bottomRows(N-1).matrix().transpose()).array().cos()
+                                    - (beta.matrix() * x_right.topRows(N-1).matrix().transpose()).array().cos()).matrix(); // nx1 x 1xM-1 = nxM-1
+        Eigen::ArrayXd vn4 = (1/beta.square())*(
+            (cos_right.matrix() * m_prime.matrix()).array()
         ); // nx1 x (nxN-1 x N-1x1) = nx1
 
         // vn5
         //=========================
-        Eigen::ArrayXd vn5 = (1/alpha)*(
+        Eigen::ArrayXd vn5 = (1/beta)*(
             ( 
-            ((alpha.matrix() * x_right.topRows(N-1).matrix().transpose()).array().cos()).matrix()
-            * g_right.topRows(N-1).matrix()
+            ((beta.matrix() * x_right.bottomRows(N-1).matrix().transpose()).array().sin()).matrix()
+            * g_right.bottomRows(N-1).matrix()
             ).array()
             - ( 
-            ((alpha.matrix() * x_right.bottomRows(N-1).matrix().transpose()).array().cos()).matrix()
-            * g_right.bottomRows(N-1).matrix()
+            ((beta.matrix() * x_right.topRows(N-1).matrix().transpose()).array().sin()).matrix()
+            * g_right.topRows(N-1).matrix()
             ).array()
         ); // nx1 x (cos(nx1 x 1XN-1) x M-1x1) = nx1
 
@@ -181,15 +181,15 @@ namespace CSA{
         } 
 
         size_t num_fs = vn.size();
-        Eigen::ArrayXd n = (Eigen::ArrayXd::LinSpaced(num_fs, 1, num_fs)); // nx1
+        Eigen::ArrayXd n = (Eigen::ArrayXd::LinSpaced(num_fs, 0, num_fs-1)); // nx1
 
-        Eigen::ArrayXd alpha = n*PI/hw_arra; // nx1
+        Eigen::ArrayXd beta = (2*n+1)*PI/(2*hw_arra); // nx1
 
         Eigen::MatrixXd x_vals = Eigen::Map<const Eigen::MatrixXd>(x.data(), x.size(), 1); // Mx1
 
-        Eigen::ArrayXd sin = (x_vals * alpha.matrix().transpose()).array().sin(); // Mx1 x 1xn =  Mxn
+        Eigen::ArrayXd cos = (x_vals * beta.matrix().transpose()).array().cos(); // Mx1 x 1xn =  Mxn
 
-        Eigen::ArrayXd VF = (sin.matrix() * vn.matrix()).array(); // Mxn x nx1 = Mx1
+        Eigen::ArrayXd VF = (cos.matrix() * vn.matrix()).array(); // Mxn x nx1 = Mx1
 
         return VF;
     }
@@ -237,19 +237,19 @@ namespace CSA{
         double e2 = er2 * E0;
         Eigen::ArrayXd n = (Eigen::ArrayXd::LinSpaced(num_fs, 1, num_fs)); // nx1
         
-        Eigen::ArrayXd alpha = n*PI/hw_arra; // nx1
+        Eigen::ArrayXd beta = n*PI/hw_arra; // nx1
         
         Eigen::ArrayXd coeff = (n*PI/4)*vn.square(); // nx1
 
         // W1
         //=========
-        Eigen::ArrayXd theta1 = alpha*(ht_arra-ht_subs); // nx1
+        Eigen::ArrayXd theta1 = beta*(ht_arra-ht_subs); // nx1
         Eigen::ArrayXd coth1 = (logcosh(theta1) - logsinh(theta1)).exp();
         double w1 = e1 * coeff.matrix().dot(coth1.matrix()); // nx1 . nx1 = 1
 
         // W2
         //=========
-        Eigen::ArrayXd theta2 = alpha*ht_subs; // nx1
+        Eigen::ArrayXd theta2 = beta*ht_subs; // nx1
         Eigen::ArrayXd coth2 = (logcosh(theta2) - logsinh(theta2)).exp();
         double w2 = e2 * coeff.matrix().dot(coth2.matrix()); // nx1 . nx1 = 1
 
