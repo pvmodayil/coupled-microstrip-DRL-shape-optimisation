@@ -235,11 +235,11 @@ namespace CSA{
         //============================
         double e1 = er1 * E0;
         double e2 = er2 * E0;
-        Eigen::ArrayXd n = (Eigen::ArrayXd::LinSpaced(num_fs, 1, num_fs)); // nx1
+        Eigen::ArrayXd n = (Eigen::ArrayXd::LinSpaced(num_fs, 0, num_fs-1)); // nx1
         
-        Eigen::ArrayXd beta = n*PI/hw_arra; // nx1
+        Eigen::ArrayXd beta = (2*n+1)*PI/(2*hw_arra); // nx1
         
-        Eigen::ArrayXd coeff = (n*PI/4)*vn.square(); // nx1
+        Eigen::ArrayXd coeff = ((2*n+1)*PI/4)*vn.square(); // nx1
 
         // W1
         //=========
