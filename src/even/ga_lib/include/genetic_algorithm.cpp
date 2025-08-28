@@ -128,7 +128,7 @@ namespace GA{
         population_right.noalias() += random_noise_right;
 
         // Limit the initial population within the boundary(0 to 1, as the curves are always scaled to be in this range)
-        population_left = population_left.array().min(1).max(1e-2).matrix();
+        population_left = population_left.array().min(1).max(0).matrix();
         population_right = population_right.array().min(1).max(0).matrix();
 
     }
@@ -139,13 +139,6 @@ namespace GA{
     *******************************************************
     */
     double GeneticAlgorithm::calculate_fitness(Eigen::ArrayXd& individual_left,Eigen::ArrayXd& individual_right){
-        // Vector size (with the expectation that left and right side have same size)
-        size_t vector_size = individual_left.size();
-
-        // Since the entire curve is given for the crossover make sure the boundary values are correct
-        individual_left(vector_size-1) = 1.0;
-        individual_right(0) = 1.0;
-        individual_right(vector_size-1) = 0.0;
         
         // Check for necessary condition
         if (!CSA::is_monotone(individual_left,CSA::MonotoneType::Increasing) || !CSA::is_monotone(individual_right,CSA::MonotoneType::Decreasing)){
@@ -280,7 +273,7 @@ namespace GA{
         }
 
         // Limit the initial population within the boundary(0 to 1, as the curves are always scaled to be in this range)
-        new_population_left = new_population_left.array().min(1).max(1e-2).matrix();
+        new_population_left = new_population_left.array().min(1).max(0).matrix();
         new_population_right = new_population_right.array().min(1).max(0).matrix();
         
         // Reset the values of population with new population
@@ -298,6 +291,9 @@ namespace GA{
         double best_energy = result.energy_convergence(0);
         double previous_energy = result.best_energy;
         
+        // starting g0
+        double g0_left = g_left_start(0);
+
         // Need the length for further processing
         size_t g_left_size = g_left_start.size();
         size_t g_right_size = g_right_start.size();
@@ -336,6 +332,11 @@ namespace GA{
             for(int i=0; i<population_size; ++i){
                 Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false);
                 Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true);
+                // Since the entire curve is given for the crossover make sure the boundary values are correct
+                individual_left(0) = g0_left;
+                individual_left(vector_size-1) = 1.0;
+                individual_right(0) = 1.0;
+                individual_right(vector_size-1) = 0.0;
                 fitness_array[i] = calculate_fitness(individual_left,individual_right);
             }
 
@@ -359,6 +360,7 @@ namespace GA{
         best_energy = fitness_array.minCoeff(&best_index); // Get the best energy of the last generation
         
         result.best_curve_left = delta_to_curve(population_left.col(best_index), vector_size, false); // Store the best curve of the last generation
+        result.best_curve_left(0) = g0_left;
         result.best_curve_left(vector_size-1) = 1.0;
 
         result.best_curve_right = delta_to_curve(population_right.col(best_index), vector_size, true);
