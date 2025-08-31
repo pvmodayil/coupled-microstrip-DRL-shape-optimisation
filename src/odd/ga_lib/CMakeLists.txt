@@ -10,17 +10,23 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Enable compiler optimizations (e.g., -O3 for maximum optimization)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
-add_executable(coupledstrip_arrangement
-  main.cpp
-  include/file_io.cpp
-  include/coupledstrip_lib.cpp
-  include/genetic_algorithm.cpp
-)
-set_target_properties(coupledstrip_arrangement PROPERTIES WIN32_EXECUTABLE OFF)
-target_include_directories(coupledstrip_arrangement PRIVATE include extern)
+# For OpenMP (optional)
+find_package(OpenMP)
 
-# Enable OpenMP if available
-find_package(OpenMP REQUIRED)
+# Add pybind11 from local extern folder
+add_subdirectory(extern/pybind11)
+
+# Build the Python module
+pybind11_add_module(ga_cpp
+    ga_wrapper.cpp
+    include/file_io.cpp
+    include/coupledstrip_lib.cpp
+    include/genetic_algorithm.cpp
+)
+
+target_include_directories(ga_cpp PRIVATE include extern)
+
+# Link OpenMP if you use it
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(coupledstrip_arrangement PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(ga_cpp PUBLIC OpenMP::OpenMP_CXX)
 endif()
