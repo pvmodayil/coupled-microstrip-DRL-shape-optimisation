@@ -285,6 +285,7 @@ def main(CSA: CoupledStripArrangement, model_path: str) -> None:
     list_zD: list[float] = []
     list_zL: list[float] = []
     for index, row in df_test.iterrows():
+        CSA.er2 = 4.5
         CSA.space_bw_strps = row['s']*1E-6
         CSA.hw_arra = 3E-3 + CSA.space_bw_strps
         zD, zL = run(CSA=CSA, model_path=model_path,ID="s-h_"+str(row["s/h"]))
