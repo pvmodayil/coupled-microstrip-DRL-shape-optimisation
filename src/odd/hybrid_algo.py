@@ -43,9 +43,10 @@ def create_directories(**kwargs) -> None:
     for dir_name in kwargs.values():
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
-            logger.info(f"Created directory: {dir_name}")
+            # logger.info(f"Created directory: {dir_name}")
         else:
-            print(f"Directory already exists: {dir_name}")
+            pass
+            # logger.info(f"Directory already exists: {dir_name}")
 
 def predict(env: CoupledStripEnv, model: SAC) -> NDArray[np.float64]:
     """
@@ -242,12 +243,11 @@ def evaluate_metrics(V0, energyD, energyL) -> dict[str,float]:
     }
     
     return data
-        
-def main(CSA: CoupledStripArrangement, model_path: str) -> None:
+def run(CSA: CoupledStripArrangement, model_path: str, ID: str) -> tuple[float, float]:
     # original hw_arra
     original_hw_arra: float = CSA.hw_arra
     cwd: str = os.getcwd()  
-    test_dir: str = os.path.join(cwd,"test",CSA.mode) # training/mode/env_type/images
+    test_dir: str = os.path.join(cwd,"test",CSA.mode,ID) # training/mode/env_type/images
     create_directories(test_dir=test_dir)
     # Model load
     model: SAC = SAC.load(model_path)
@@ -277,6 +277,24 @@ def main(CSA: CoupledStripArrangement, model_path: str) -> None:
     df: pd.DataFrame = pd.concat([df_rl, df_ga], ignore_index=True)
     
     df.to_excel(os.path.join(test_dir,"hybrid_algo_metric.xlsx"))
+    
+    return data_ga["zD"], data_ga["zL"]
+        
+def main(CSA: CoupledStripArrangement, model_path: str) -> None:
+    df_test = pd.read_csv("./test/s-h_testcase.csv")
+    list_zD: list[float] = []
+    list_zL: list[float] = []
+    for index, row in df_test.iterrows():
+        CSA.space_bw_strps = row['s']*1E-6
+        CSA.hw_arra = 3E-3 + CSA.space_bw_strps
+        zD, zL = run(CSA=CSA, model_path=model_path,ID="s-h_"+str(row["s/h"]))
+        list_zD.append(zD)
+        list_zL.append(zL)
+    
+    df_test["zD"] = list_zD
+    df_test["zL"] = list_zL
+    
+    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"s-h_test_result.xlsx"))
 
 if __name__ == "__main__":
     CSA: CoupledStripArrangement = CoupledStripArrangement(
