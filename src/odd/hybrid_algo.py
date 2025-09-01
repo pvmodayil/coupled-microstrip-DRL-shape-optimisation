@@ -20,6 +20,7 @@ import coupledstrip_lib as csa_lib
 from coupledstrip_lib import CoupledStripArrangement
 from coupledstrip_env import CoupledStripEnv
 
+os.environ['PATH'] = r'C:\mingw64\bin;' + os.environ['PATH']
 from ga_lib import ga_cpp #type: ignore
 from _types import GAOptResult
 

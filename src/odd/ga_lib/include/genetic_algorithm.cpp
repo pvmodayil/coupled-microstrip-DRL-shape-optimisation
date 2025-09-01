@@ -4,29 +4,28 @@
 
 #include <random>
 #include <numeric>
-#include <iostream>
 #include <stdexcept>
 #include <format>
 
-void print_progress_bar(int total, int current, double value) {
-    constexpr int bar_width = 20; // Width of the progress bar
-    float progress = static_cast<float>(current) / total;
+// void print_progress_bar(int total, int current, double value) {
+//     constexpr int bar_width = 20; // Width of the progress bar
+//     float progress = static_cast<float>(current) / total;
 
-    std::cout << "[";
-    int pos = static_cast<int>(bar_width * progress);
-    for (int i = 0; i < bar_width; ++i) {
-        if (i < pos) std::cout << "=";
-        else if (i == pos) std::cout << ">";
-        else std::cout << " ";
-    }
-    std::cout << "] " << static_cast<int>(progress * 100.0f) << "% = (" << value <<")"; // \r returns cursor to the beginning of the line
-    if (current < total) {
-        std::cout << "\r";
-    } else {
-        std::cout << " DONE\n";  // Add "DONE" text and newline when complete
-    }
-    std::cout.flush(); // Ensure the output is printed immediately
-}
+//     std::cout << "[";
+//     int pos = static_cast<int>(bar_width * progress);
+//     for (int i = 0; i < bar_width; ++i) {
+//         if (i < pos) std::cout << "=";
+//         else if (i == pos) std::cout << ">";
+//         else std::cout << " ";
+//     }
+//     std::cout << "] " << static_cast<int>(progress * 100.0f) << "% = (" << value <<")"; // \r returns cursor to the beginning of the line
+//     if (current < total) {
+//         std::cout << "\r";
+//     } else {
+//         std::cout << " DONE\n";  // Add "DONE" text and newline when complete
+//     }
+//     std::cout.flush(); // Ensure the output is printed immediately
+// }
 
 namespace GA{
     /*
@@ -330,7 +329,7 @@ namespace GA{
 
         // Iterate for num_generations steps
         for(size_t generation=1; generation<num_generations+1; ++generation){
-            print_progress_bar(num_generations, generation, best_energy);
+            // print_progress_bar(num_generations, generation, best_energy);
 
             // Fitness calculation
             #pragma omp parallel for
