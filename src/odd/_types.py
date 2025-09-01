@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+from typing import TypedDict
+from numpy.typing import NDArray
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class CoupledStripArrangement:
     V0: float # Potential of the sytem, used to scale the system which is defaulted at V0=1.0
     hw_arra: float # half width of the arrangement, parameter a
@@ -14,3 +16,9 @@ class CoupledStripArrangement:
     num_fs: int # number of fourier series coefficients
     num_pts: int # number of points for the piece wise linear approaximation
     mode: str # Even or Odd mode
+
+class GAOptResult(TypedDict):
+    energy_convergence: NDArray
+    best_curve_left: NDArray
+    best_curve_right: NDArray
+    best_energy: float

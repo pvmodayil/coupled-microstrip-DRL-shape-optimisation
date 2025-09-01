@@ -20,6 +20,9 @@ import coupledstrip_lib as csa_lib
 from coupledstrip_lib import CoupledStripArrangement
 from coupledstrip_env import CoupledStripEnv
 
+from ga_lib import ga_cpp #type: ignore
+from _types import GAOptResult
+
 from utils import plot_curve as plot_curve
 
 from stable_baselines3 import SAC
@@ -180,8 +183,41 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
     plot_curve.plot_potential(x_left=x_left,g_left=g_left,x_right=x_right,g_right=g_right,image_dir=image_dir,name=case)
     
     # Call GA here
-    ga_energy: float = 0
+    num_fs: int = 1000
+    population_size: int = 100
+    num_generations: int = 1000
+    result: GAOptResult = ga_cpp.ga_optimize(env.CSA.V0,
+                                    env.CSA.space_bw_strps,
+                                    env.CSA.width_micrstr,
+                                    env.CSA.ht_micrstr,
+                                    env.CSA.hw_arra,
+                                    env.CSA.ht_arra,
+                                    env.CSA.ht_subs,
+                                    env.CSA.er1,
+                                    env.CSA.er2,
+                                    num_fs,
+                                    population_size,
+                                    num_generations,
+                                    x_left,g_left,
+                                    x_right,g_right)
     
+    ga_energy: float = result["best_energy"]
+    data_opt: dict[str, NDArray] = {
+        'x_left': x_left,
+        'g_left': result["best_curve_left"],
+        'x_right': x_right,
+        'g_right': result["best_curve_right"]
+    }
+    
+    convergence_data: dict[str, NDArray] = {
+        'generation': np.arange(num_generations+1),
+        'energy': result["energy_convergence"]
+    }
+    pd.DataFrame(data_opt).to_excel(os.path.join(image_dir,f'{case}_optimized_curve.xlsx'), index=False)
+    pd.DataFrame(data_opt).to_csv(os.path.join(image_dir,f'{case}_optimized_curve.csv'), index=False)
+    
+    pd.DataFrame(convergence_data).to_excel(os.path.join(image_dir,f'{case}_convergence_curve.xlsx'), index=False)
+
     return rl_energy, ga_energy
 
 def evaluate_metrics(V0, energyD, energyL) -> dict[str,float]:
