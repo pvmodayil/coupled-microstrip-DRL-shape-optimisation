@@ -184,6 +184,7 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
     plot_curve.plot_potential(x_left=x_left,g_left=g_left,x_right=x_right,g_right=g_right,image_dir=image_dir,name=case)
     
     # Call GA here
+    logger.info("GA Optimization Started\n")
     num_fs: int = 1000
     population_size: int = 100
     num_generations: int = 1000
