@@ -20,7 +20,7 @@ import coupledstrip_lib as csa_lib
 from coupledstrip_lib import CoupledStripArrangement
 from coupledstrip_env import CoupledStripEnv
 
-os.environ['PATH'] = r'C:\mingw64\bin;' + os.environ['PATH']
+os.add_dll_directory(r'C:\mingw64\bin')
 from ga_lib import ga_cpp #type: ignore
 from _types import GAOptResult
 
@@ -264,7 +264,7 @@ def main(CSA: CoupledStripArrangement, model_path: str) -> None:
     rl_energyL, ga_energyL = hybrid_algorithm(env=envL, model=model, image_dir=test_dir, case="CaseL")
     
     data_rl: dict[str, float] = evaluate_metrics(V0=CSA.V0, energyD=rl_energyD,energyL=rl_energyL)
-    data_ga: dict[str, float] = evaluate_metrics(V0=CSA.V0, energyD=rl_energyD,energyL=rl_energyL) # Change to ga when it is implemented
+    data_ga: dict[str, float] = evaluate_metrics(V0=CSA.V0, energyD=ga_energyD,energyL=ga_energyL) # Change to ga when it is implemented
     
     df_rl = pd.DataFrame([data_rl])
     df_rl["key"] = "rl"

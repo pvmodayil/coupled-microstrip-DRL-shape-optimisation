@@ -1,0 +1,7 @@
+ninja_dyndep_version = 1.0
+build CMakeFiles/ga_cpp.dir/ga_wrapper.cpp.obj: dyndep
+
+build CMakeFiles/ga_cpp.dir/include/coupledstrip_lib.cpp.obj: dyndep
+
+build CMakeFiles/ga_cpp.dir/include/genetic_algorithm.cpp.obj: dyndep
+

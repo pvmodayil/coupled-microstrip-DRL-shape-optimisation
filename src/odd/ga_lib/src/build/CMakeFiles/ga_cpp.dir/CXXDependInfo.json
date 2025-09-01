@@ -1,0 +1,24 @@
+{
+	"bmi-installation" : null,
+	"compiler-frontend-variant" : "GNU",
+	"compiler-id" : "GNU",
+	"compiler-simulate-id" : "",
+	"config" : "",
+	"cxx-modules" : {},
+	"dir-cur-bld" : "C:/Users/pvmod/InformationProcessingLab/02_ShapeOptimisation_CoupledStrips/coupled-microstrip-DRL-shape-optimisation/src/odd/ga_lib/src/build",
+	"dir-cur-src" : "C:/Users/pvmod/InformationProcessingLab/02_ShapeOptimisation_CoupledStrips/coupled-microstrip-DRL-shape-optimisation/src/odd/ga_lib/src",
+	"dir-top-bld" : "C:/Users/pvmod/InformationProcessingLab/02_ShapeOptimisation_CoupledStrips/coupled-microstrip-DRL-shape-optimisation/src/odd/ga_lib/src/build",
+	"dir-top-src" : "C:/Users/pvmod/InformationProcessingLab/02_ShapeOptimisation_CoupledStrips/coupled-microstrip-DRL-shape-optimisation/src/odd/ga_lib/src",
+	"exports" : [],
+	"forward-modules-from-target-dirs" : [],
+	"include-dirs" : 
+	[
+		"C:\\Users\\pvmod\\InformationProcessingLab\\02_ShapeOptimisation_CoupledStrips\\coupled-microstrip-DRL-shape-optimisation\\src\\odd\\ga_lib\\src\\include",
+		"C:\\Users\\pvmod\\InformationProcessingLab\\02_ShapeOptimisation_CoupledStrips\\coupled-microstrip-DRL-shape-optimisation\\src\\odd\\ga_lib\\src\\extern",
+		"C:\\Users\\pvmod\\InformationProcessingLab\\02_ShapeOptimisation_CoupledStrips\\coupled-microstrip-DRL-shape-optimisation\\src\\odd\\ga_lib\\src\\extern\\pybind11\\include",
+		"C:\\Users\\pvmod\\AppData\\Roaming\\uv\\python\\cpython-3.12.7-windows-x86_64-none\\Include"
+	],
+	"language" : "CXX",
+	"linked-target-dirs" : [],
+	"module-dir" : "C:/Users/pvmod/InformationProcessingLab/02_ShapeOptimisation_CoupledStrips/coupled-microstrip-DRL-shape-optimisation/src/odd/ga_lib/src/build/CMakeFiles/ga_cpp.dir"
+}

@@ -1,0 +1,11 @@
+{
+"rules": [
+{
+"primary-output": "CMakeFiles\\ga_cpp.dir\\ga_wrapper.cpp.obj",
+"requires": [
+]
+}
+],
+"version": 0,
+"revision": 0
+}
