@@ -51,6 +51,11 @@ GA::GAResult ga_optimize(const double V0,
         return result;
 }
 
+// To set maximum thread usage
+void set_omp_to_max() {
+    omp_set_num_threads(omp_get_max_threads());
+}
+
 py::dict ga_optimize_py(double V0,
                         double space_bw_strps,
                         double width_micrstr,
@@ -82,6 +87,8 @@ py::dict ga_optimize_py(double V0,
 }
 
 PYBIND11_MODULE(ga_cpp, m) { // ga_cpp is the Python import name
+    m.doc() = "Genetic Algorithm optimization for coupled microstrips"; 
+    m.def("set_omp_to_max", &set_omp_to_max, "Set OMP to max threads");
     m.def("ga_optimize", &ga_optimize_py,
           py::arg("V0"),
           py::arg("space_bw_strps"),
