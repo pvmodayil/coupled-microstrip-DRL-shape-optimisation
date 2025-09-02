@@ -25,6 +25,11 @@ from utils import plot_curve as plot_curve
 from stable_baselines3 import SAC
 
 import logging
+
+os.add_dll_directory(r'C:\mingw64\bin')
+from ga_lib import ga_cpp #type: ignore
+from _types import GAOptResult
+
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger: logging.Logger = logging.getLogger(__name__)
@@ -39,9 +44,10 @@ def create_directories(**kwargs) -> None:
     for dir_name in kwargs.values():
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
-            logger.info(f"Created directory: {dir_name}")
+            # logger.info(f"Created directory: {dir_name}")
         else:
-            print(f"Directory already exists: {dir_name}")
+            pass
+            # logger.info(f"Directory already exists: {dir_name}")
 
 def predict(env: CoupledStripEnv, model: SAC) -> NDArray[np.float64]:
     """
@@ -180,8 +186,42 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
     plot_curve.plot_potential(x_left=x_left,g_left=g_left,x_right=x_right,g_right=g_right,image_dir=image_dir,name=case)
     
     # Call GA here
-    ga_energy: float = 0
+    logger.info("GA Optimization Started\n")
+    num_fs: int = 1000
+    population_size: int = 100
+    num_generations: int = 1000
+    result: GAOptResult = ga_cpp.ga_optimize(env.CSA.V0,
+                                    env.CSA.space_bw_strps,
+                                    env.CSA.width_micrstr,
+                                    env.CSA.ht_micrstr,
+                                    env.CSA.hw_arra,
+                                    env.CSA.ht_arra,
+                                    env.CSA.ht_subs,
+                                    env.CSA.er1,
+                                    env.CSA.er2,
+                                    num_fs,
+                                    population_size,
+                                    num_generations,
+                                    x_left,g_left,
+                                    x_right,g_right)
     
+    ga_energy: float = result["best_energy"]
+    data_opt: dict[str, NDArray] = {
+        'x_left': x_left,
+        'g_left': result["best_curve_left"],
+        'x_right': x_right,
+        'g_right': result["best_curve_right"]
+    }
+    
+    convergence_data: dict[str, NDArray] = {
+        'generation': np.arange(num_generations+1),
+        'energy': result["energy_convergence"]
+    }
+    pd.DataFrame(data_opt).to_excel(os.path.join(image_dir,f'{case}_optimized_curve.xlsx'), index=False)
+    pd.DataFrame(data_opt).to_csv(os.path.join(image_dir,f'{case}_optimized_curve.csv'), index=False)
+    
+    pd.DataFrame(convergence_data).to_excel(os.path.join(image_dir,f'{case}_convergence_curve.xlsx'), index=False)
+
     return rl_energy, ga_energy
 
 def evaluate_metrics(V0, energyD, energyL) -> dict[str,float]:
@@ -204,12 +244,11 @@ def evaluate_metrics(V0, energyD, energyL) -> dict[str,float]:
     }
     
     return data
-        
-def main(CSA: CoupledStripArrangement, model_path: str) -> None:
+def run(CSA: CoupledStripArrangement, model_path: str, ID: str) -> tuple[float, float]:
     # original hw_arra
     original_hw_arra: float = CSA.hw_arra
     cwd: str = os.getcwd()  
-    test_dir: str = os.path.join(cwd,"test",CSA.mode) # training/mode/env_type/images
+    test_dir: str = os.path.join(cwd,"test",CSA.mode,ID) # training/mode/env_type/images
     create_directories(test_dir=test_dir)
     # Model load
     model: SAC = SAC.load(model_path)
@@ -227,7 +266,7 @@ def main(CSA: CoupledStripArrangement, model_path: str) -> None:
     rl_energyL, ga_energyL = hybrid_algorithm(env=envL, model=model, image_dir=test_dir, case="CaseL")
     
     data_rl: dict[str, float] = evaluate_metrics(V0=CSA.V0, energyD=rl_energyD,energyL=rl_energyL)
-    data_ga: dict[str, float] = evaluate_metrics(V0=CSA.V0, energyD=rl_energyD,energyL=rl_energyL) # Change to ga when it is implemented
+    data_ga: dict[str, float] = evaluate_metrics(V0=CSA.V0, energyD=ga_energyD,energyL=ga_energyL) # Change to ga when it is implemented
     
     df_rl = pd.DataFrame([data_rl])
     df_rl["key"] = "rl"
@@ -239,6 +278,26 @@ def main(CSA: CoupledStripArrangement, model_path: str) -> None:
     df: pd.DataFrame = pd.concat([df_rl, df_ga], ignore_index=True)
     
     df.to_excel(os.path.join(test_dir,"hybrid_algo_metric.xlsx"))
+    
+    return data_ga["zD"], data_ga["zL"]
+        
+def main(CSA: CoupledStripArrangement, model_path: str) -> None:
+    df_test = pd.read_csv("./test/s-h_testcase.csv")
+    list_zD: list[float] = []
+    list_zL: list[float] = []
+    for index, row in df_test.iterrows():
+        logger.info(f"ID: s/h = {row['s/h']}")
+        CSA.er2 = 4.5
+        CSA.space_bw_strps = row['s']*1E-6
+        CSA.hw_arra = 3E-3 + CSA.space_bw_strps
+        zD, zL = run(CSA=CSA, model_path=model_path,ID="s-h_"+str(row["s/h"]))
+        list_zD.append(zD)
+        list_zL.append(zL)
+    
+    df_test["zD"] = list_zD
+    df_test["zL"] = list_zL
+    
+    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"s-h_test_result.xlsx"))
 
 if __name__ == "__main__":
     CSA: CoupledStripArrangement = CoupledStripArrangement(

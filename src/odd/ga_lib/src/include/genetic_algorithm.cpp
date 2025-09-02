@@ -1,10 +1,9 @@
 // Include the header for this source file
 #include "genetic_algorithm.h"
 #include "coupledstrip_lib.h"
-
+#include <iostream>
 #include <random>
 #include <numeric>
-#include <iostream>
 #include <stdexcept>
 #include <format>
 
