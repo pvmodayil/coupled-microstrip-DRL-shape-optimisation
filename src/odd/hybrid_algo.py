@@ -29,6 +29,8 @@ import logging
 os.add_dll_directory(r'C:\mingw64\bin')
 from ga_lib import ga_cpp #type: ignore
 from _types import GAOptResult
+# Set OpenMP to max threads before using parallel functions
+ga_cpp.set_omp_to_max()
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
