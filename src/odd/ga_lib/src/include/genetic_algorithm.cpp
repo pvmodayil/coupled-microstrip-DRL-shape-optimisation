@@ -350,8 +350,8 @@ namespace GA{
         // Final population fitness calculation
         #pragma omp parallel for
         for(int i=0; i<population_size; ++i){
-            Eigen::ArrayXd individual_left = population_left.col(i).array();
-            Eigen::ArrayXd individual_right = population_right.col(i).array();
+            Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false);
+            Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true);
             fitness_array[i] = calculate_fitness(individual_left,individual_right);
         }
 

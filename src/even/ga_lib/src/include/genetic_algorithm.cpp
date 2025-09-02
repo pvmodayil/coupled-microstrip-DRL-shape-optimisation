@@ -123,6 +123,10 @@ namespace GA{
             ).array() * population_right.array()
         ).matrix();
 
+        // Zero out noise for first column to retain original
+        random_noise_left.col(0).setZero();
+        random_noise_right.col(0).setZero();
+
         // Add noise to create the initial population
         population_left.noalias() += random_noise_left;
         population_right.noalias() += random_noise_right;
@@ -351,8 +355,13 @@ namespace GA{
         // Final population fitness calculation
         #pragma omp parallel for
         for(int i=0; i<population_size; ++i){
-            Eigen::ArrayXd individual_left = population_left.col(i).array();
-            Eigen::ArrayXd individual_right = population_right.col(i).array();
+            Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false);
+            Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true);
+            // Since the entire curve is given for the crossover make sure the boundary values are correct
+            individual_left(0) = g0_left;
+            individual_left(vector_size-1) = 1.0;
+            individual_right(0) = 1.0;
+            individual_right(vector_size-1) = 0.0;
             fitness_array[i] = calculate_fitness(individual_left,individual_right);
         }
 
