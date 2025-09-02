@@ -80,12 +80,15 @@ namespace GA{
         return delta;
      }
 
-     Eigen::ArrayXd GeneticAlgorithm::delta_to_curve(const Eigen::Ref<const Eigen::VectorXd>& delta, size_t vector_size, bool decreasing){
+     Eigen::ArrayXd GeneticAlgorithm::delta_to_curve(const Eigen::Ref<const Eigen::VectorXd>& delta, 
+        size_t vector_size, bool decreasing, 
+        double initial_value){
+
         Eigen::ArrayXd curve(vector_size);
         Eigen::ArrayXd cumsum(delta.size());
 
         if (decreasing){
-            curve(0) = 1;
+            curve(0) = initial_value;
             std::partial_sum(delta.data(), delta.data() + delta.size(), cumsum.data());
             // deltas are positive so subtract
             curve.bottomRows(vector_size-1) = curve(0) - cumsum;
@@ -93,7 +96,7 @@ namespace GA{
             return curve;
         }
         // Increasing case
-        curve(0) = 0;
+        curve(0) = initial_value;
         std::partial_sum(delta.data(), delta.data() + delta.size(), cumsum.data());
         curve.bottomRows(vector_size-1) = curve(0) + cumsum;
 
@@ -297,6 +300,7 @@ namespace GA{
         
         // starting g0
         double g0_left = g_left_start(0);
+        double g0_right = 1.0;
 
         // Need the length for further processing
         size_t g_left_size = g_left_start.size();
@@ -334,8 +338,8 @@ namespace GA{
             // Fitness calculation
             #pragma omp parallel for
             for(int i=0; i<population_size; ++i){
-                Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false);
-                Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true);
+                Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false,g0_left);
+                Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true,g0_right);
                 // Since the entire curve is given for the crossover make sure the boundary values are correct
                 individual_left(0) = g0_left;
                 individual_left(vector_size-1) = 1.0;
@@ -355,8 +359,8 @@ namespace GA{
         // Final population fitness calculation
         #pragma omp parallel for
         for(int i=0; i<population_size; ++i){
-            Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false);
-            Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true);
+            Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false,g0_left);
+            Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true,g0_right);
             // Since the entire curve is given for the crossover make sure the boundary values are correct
             individual_left(0) = g0_left;
             individual_left(vector_size-1) = 1.0;
@@ -368,11 +372,11 @@ namespace GA{
         // Optimized curve and metrics
         best_energy = fitness_array.minCoeff(&best_index); // Get the best energy of the last generation
         
-        result.best_curve_left = delta_to_curve(population_left.col(best_index), vector_size, false); // Store the best curve of the last generation
+        result.best_curve_left = delta_to_curve(population_left.col(best_index), vector_size, false, g0_left); // Store the best curve of the last generation
         result.best_curve_left(0) = g0_left;
         result.best_curve_left(vector_size-1) = 1.0;
 
-        result.best_curve_right = delta_to_curve(population_right.col(best_index), vector_size, true);
+        result.best_curve_right = delta_to_curve(population_right.col(best_index), vector_size, true, g0_right);
         result.best_curve_right(0) = 1.0;
         result.best_curve_right(vector_size-1) = 0.0;
 
