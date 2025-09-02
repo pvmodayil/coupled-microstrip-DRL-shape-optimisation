@@ -222,7 +222,7 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
     }
     pd.DataFrame(data_opt).to_excel(os.path.join(image_dir,f'{case}_optimized_curve.xlsx'), index=False)
     pd.DataFrame(data_opt).to_csv(os.path.join(image_dir,f'{case}_optimized_curve.csv'), index=False)
-    
+    plot_curve.plot_potential(x_left=x_left,g_left=g_left,x_right=x_right,g_right=g_right,image_dir=image_dir,name=case+"_GA")
     pd.DataFrame(convergence_data).to_excel(os.path.join(image_dir,f'{case}_convergence_curve.xlsx'), index=False)
 
     return rl_energy, ga_energy
