@@ -166,7 +166,7 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
     env.CSA.hw_arra = optimal_hw_arra(env=env, model=model, image_dir=image_dir, case=case)
     
     action: NDArray = predict(env=env, model=model)
-    mid_point: int = env.action_space.shape[0]//2
+    mid_point: int = env.action_space.shape[0]//2 + 1
 
     x_left,g_left,_control = env.get_bezier_curve(action=action[:mid_point],side='left')
     x_right,g_right,_control = env.get_bezier_curve(action=action[mid_point:],side='right')
@@ -283,7 +283,7 @@ def run(CSA: CoupledStripArrangement, model_path: str, ID: str) -> tuple[float, 
         
 def main(CSA: CoupledStripArrangement, model_path: str) -> None:
     zD, zL = run(CSA=CSA, model_path=model_path,ID="TC-2")
-    logger.info(f"The impedances are ZD: {zD} Ohm, ZL: {zL} Ohm\n")
+    logger.info(f"The impedances are ZD: {zD} Ohm, ZL: {zL} Ohm")
     # df_test = pd.read_csv("./test/s-h_testcase.csv")
     # list_zD: list[float] = []
     # list_zL: list[float] = []
