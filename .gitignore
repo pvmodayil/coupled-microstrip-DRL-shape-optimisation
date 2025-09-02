@@ -13,13 +13,13 @@ src/even/__pycache__
 src/even/utils/__pycache__
 
 # cpp build folder
-src/odd/ga_lib/build/
-src/even/ga_lib/build/
+src/odd/ga_lib/src/build/
+src/even/ga_lib/src/build/
 
 # data folder
-src/odd/ga_lib/data/
-src/even/ga_lib/data/
+src/odd/ga_lib/src/data/
+src/even/ga_lib/src/data/
 
 # external dependencies
-src/odd/ga_lib/extern/
-src/even/ga_lib/extern/
+src/odd/ga_lib/src/extern/
+src/even/ga_lib/src/extern/
