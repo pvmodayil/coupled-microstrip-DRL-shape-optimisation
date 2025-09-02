@@ -20,15 +20,16 @@ import coupledstrip_lib as csa_lib
 from coupledstrip_lib import CoupledStripArrangement
 from coupledstrip_env import CoupledStripEnv
 
-os.add_dll_directory(r'C:\mingw64\bin')
-from ga_lib import ga_cpp #type: ignore
-from _types import GAOptResult
-
 from utils import plot_curve as plot_curve
 
 from stable_baselines3 import SAC
 
 import logging
+
+os.add_dll_directory(r'C:\mingw64\bin')
+from ga_lib import ga_cpp #type: ignore
+from _types import GAOptResult
+
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger: logging.Logger = logging.getLogger(__name__)
