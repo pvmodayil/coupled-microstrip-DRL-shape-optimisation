@@ -20,6 +20,7 @@ GA::GAResult ga_optimize(const double V0,
             const double er1,
             const double er2,
             const int num_fs,
+            double noise_scale,
             const int population_size,
             const int num_generations,
             Eigen::ArrayXd x_left,
@@ -45,7 +46,6 @@ GA::GAResult ga_optimize(const double V0,
         result.energy_convergence(0) = energy_init;
 
         // Call the optimization
-        double noise_scale=0.1;
         GAProblem.optimize(noise_scale, result);
 
         return result;
@@ -66,6 +66,7 @@ py::dict ga_optimize_py(double V0,
                         double er1,
                         double er2,
                         int num_fs,
+                        double noise_scale,
                         int population_size,
                         int num_generations,
                         const Eigen::ArrayXd& x_left,
@@ -75,7 +76,7 @@ py::dict ga_optimize_py(double V0,
 {
     // call the actual C++ function
     GA::GAResult result = ga_optimize(V0, space_bw_strps, width_micrstr, ht_micrstr, hw_arra, ht_arra, ht_subs,
-                                      er1, er2, num_fs, population_size, num_generations,
+                                      er1, er2, num_fs, noise_scale, population_size, num_generations,
                                       x_left, g_left, x_right, g_right);
 
     py::dict py_result;
@@ -100,6 +101,7 @@ PYBIND11_MODULE(ga_cpp, m) { // ga_cpp is the Python import name
           py::arg("er1"),
           py::arg("er2"),
           py::arg("num_fs"),
+          py::arg("noise_scale"),
           py::arg("population_size"),
           py::arg("num_generations"),
           py::arg("x_left"),
