@@ -287,7 +287,7 @@ def run(CSA: CoupledStripArrangement, model_path: str, ID: str) -> tuple[float, 
     return data_ga["zD"], data_ga["zL"]
         
 def main(CSA: CoupledStripArrangement, model_path: str) -> None:
-    zD, zL = run(CSA=CSA, model_path=model_path,ID="TC-2")
+    zD, zL = run(CSA=CSA, model_path=model_path,ID="TC-1")
     logger.info(f"The impedances are ZD: {zD} Ohm, ZL: {zL} Ohm")
     # df_test = pd.read_csv("./test/s-h_testcase.csv")
     # list_zD: list[float] = []
@@ -323,5 +323,5 @@ if __name__ == "__main__":
         mode="Even"
     )
     
-    model_path = os.path.join("training","Even","hw_arra3","models","SAC_CSA_EVEN.zip")
+    model_path = os.path.join("training","Even_best","caseD","models","SAC_CSA_EVEN.zip")
     main(CSA=CSA,model_path=model_path)
