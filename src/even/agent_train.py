@@ -305,8 +305,8 @@ def main(CSA: CoupledStripArrangement, train_timesteps: int) -> None:
 if __name__ == "__main__":
     CSA: CoupledStripArrangement = CoupledStripArrangement(
         V0=1., # Potential of the sytem, used to scale the system which is defaulted at V0=1.0
-        hw_arra=2E-3, # half width of the arrangement, parameter a
-        ht_arra=2E-3, # height of the arrangement, parameter b
+        hw_arra=6E-3, # half width of the arrangement, parameter a
+        ht_arra=3E-3, # height of the arrangement, parameter b
         ht_subs=790E-6, # height of the substrate, parameter h
         space_bw_strps=400E-6, # gap between the two microstrips, parameter s
         width_micrstr=400E-6, # width of the microstrip, parameter w
