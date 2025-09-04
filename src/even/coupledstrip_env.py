@@ -69,7 +69,7 @@ class CoupledStripEnv(Env):
                                                     ht_arra=self.CSA.ht_arra,
                                                     ht_subs=self.CSA.ht_subs,
                                                     vn=vn)
-        logger.info(f"Initial energy: {self.energy_baseline} VAs")
+        # logger.info(f"Initial energy: {self.energy_baseline} VAs")
         self.minimum_energy: NDArray = np.array([np.inf])
         self.energy_calculation_count: int = 0
         
