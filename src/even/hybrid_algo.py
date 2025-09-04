@@ -287,7 +287,7 @@ def run(CSA: CoupledStripArrangement, model_path: str, ID: str) -> tuple[float, 
     return data_ga["zD"], data_ga["zL"]
         
 def main(CSA: CoupledStripArrangement, model_path: str) -> None:
-    zD, zL = run(CSA=CSA, model_path=model_path,ID="TC-1")
+    zD, zL = run(CSA=CSA, model_path=model_path,ID="TC-3")
     logger.info(f"The impedances are ZD: {zD} Ohm, ZL: {zL} Ohm")
     # df_test = pd.read_csv("./test/s-h_testcase.csv")
     # list_zD: list[float] = []
@@ -317,11 +317,11 @@ if __name__ == "__main__":
         width_micrstr=150E-6, # width of the microstrip, parameter w
         ht_micrstr=0, # height of the microstripm, parameter t
         er1=1.0, # dielectric constatnt for medium 1
-        er2=4.5, # dielctric constant for medium 2
+        er2=12.9, # dielctric constant for medium 2
         num_fs=2000, # number of fourier series coefficients
         num_pts=30, # number of points for the piece wise linear approaximation
         mode="Even"
     )
     
-    model_path = os.path.join("training","Even_best","caseD","models","SAC_CSA_EVEN.zip")
+    model_path = os.path.join("training","Even","caseD","models","SAC_CSA_EVEN.zip")
     main(CSA=CSA,model_path=model_path)
