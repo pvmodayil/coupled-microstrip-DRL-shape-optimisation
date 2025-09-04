@@ -202,10 +202,14 @@ namespace GA{
     *                    SBX Crossover                    *
     *******************************************************
     */
-    void GeneticAlgorithm::crossover(Eigen::VectorXd& parent1, Eigen::VectorXd& parent2, Eigen::Ref<Eigen::VectorXd> child1, Eigen::Ref<Eigen::VectorXd> child2, double eta){
+    void GeneticAlgorithm::crossover(Eigen::VectorXd& parent1, 
+        Eigen::VectorXd& parent2, 
+        Eigen::Ref<Eigen::VectorXd> child1, 
+        Eigen::Ref<Eigen::VectorXd> child2, 
+        double& eta){
         
         size_t parent_size = parent1.size();
-        double exponent = 1.0 / (eta + 1.0);
+        double exponent = 1.0 / (eta + 1.0); // Small eta means higher spread
 
         // Generate a vector of random numbers
         Eigen::ArrayXd u = 0.5 * (Eigen::ArrayXd::Random(parent_size) + 1); // Random numbers between 0 and 1
@@ -246,7 +250,15 @@ namespace GA{
     *                     Reproduction                    *
     *******************************************************
     */
-    void GeneticAlgorithm::reproduce(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, Eigen::ArrayXd& fitness_array, double& noise_scale){
+    double GeneticAlgorithm::get_eta(int generation, int num_generations){
+        // exponentially increase eta from 0.5 to 2
+        constexpr double eta_start = 0.5;
+        constexpr double eta_end = 2.0;
+        double eta = eta_start * std::pow((eta_end/eta_start), static_cast<double>(generation)/num_generations);
+        return eta;
+    }
+
+    void GeneticAlgorithm::reproduce(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, Eigen::ArrayXd& fitness_array, double& eta){
         // Vector size (with the expectation that left and right side have same size)
         size_t delta_size = g_left_start.size() - 1; // Population is made up of deltas
 
@@ -274,8 +286,8 @@ namespace GA{
             Eigen::VectorXd parent2_right = population_right.col(select_parent(fitness_array,thread_id));
             
             // Crossover with SBX crossover
-            crossover(parent1_left,parent2_left,new_population_left.col(i),new_population_left.col(i+1)); 
-            crossover(parent1_right,parent2_right,new_population_right.col(i),new_population_right.col(i+1));
+            crossover(parent1_left,parent2_left,new_population_left.col(i),new_population_left.col(i+1),eta); 
+            crossover(parent1_right,parent2_right,new_population_right.col(i),new_population_right.col(i+1),eta);
 
         }
 
@@ -294,6 +306,7 @@ namespace GA{
     *******************************************************
     */
     void GeneticAlgorithm::optimize(double& noise_scale, GAResult& result){
+        // Store the energy convergence
         size_t best_index = 0;
         double best_energy = result.energy_convergence(0);
         double previous_energy = result.best_energy;
@@ -331,6 +344,8 @@ namespace GA{
         // Array to hold fitness value corresponding to the individual in the population
         Eigen::ArrayXd fitness_array = Eigen::ArrayXd(population_size);
 
+        // Initialize the eta parameter for SBX crossover
+        double eta; // Small eta means higher spread
         // Iterate for num_generations steps
         for(size_t generation=1; generation<num_generations+1; ++generation){
             print_progress_bar(num_generations, generation, best_energy);
@@ -353,7 +368,8 @@ namespace GA{
             result.energy_convergence(generation) = best_energy; // Store the best energy of the generation
             
             // Reproduce
-            reproduce(population_left, population_right, fitness_array, noise_scale);
+            eta = get_eta(generation, num_generations);
+            reproduce(population_left, population_right, fitness_array, eta);
         }
 
         // Final population fitness calculation
