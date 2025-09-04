@@ -191,6 +191,7 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
     # Call GA here
     logger.info("GA Optimization Started\n")
     num_fs: int = 1000
+    noise_scale: float = 0.1
     population_size: int = 100
     num_generations: int = 300
     result: GAOptResult = ga_cpp.ga_optimize(env.CSA.V0,
@@ -203,6 +204,7 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
                                     env.CSA.er1,
                                     env.CSA.er2,
                                     num_fs,
+                                    noise_scale,
                                     population_size,
                                     num_generations,
                                     x_left,g_left,
