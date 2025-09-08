@@ -349,10 +349,10 @@ def main(CSA: CoupledStripArrangement, model_pathD: str, model_pathL: str) -> No
     df_test["Zd_GA"] = list_zD_GA
     df_test["Zl_GA"] = list_zL_GA
     
-    df_test["Wd_RL"] = list_zD_RL
-    df_test["Wl_RL"] = list_zL_RL
-    df_test["Wd_GA"] = list_zD_GA
-    df_test["Wl_GA"] = list_zL_GA
+    df_test["Wd_RL"] = list_Wd_RL
+    df_test["Wl_RL"] = list_Wl_RL
+    df_test["Wd_GA"] = list_Wd_GA
+    df_test["Wl_GA"] = list_Wl_GA
     
     df_test["epseff_RL"] = list_eps_eff_RL
     df_test["epseff_GA"] = list_eps_eff_GA
