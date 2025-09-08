@@ -249,26 +249,27 @@ def evaluate_metrics(V0, energyD, energyL) -> dict[str,float]:
     }
     
     return data
-def run(CSA: CoupledStripArrangement, model_path: str, ID: str) -> tuple[float, float]:
+def run(CSA: CoupledStripArrangement, model_pathD: str, model_pathL: str, ID: str) -> tuple[dict, dict]:
     # original hw_arra
     original_hw_arra: float = CSA.hw_arra
     cwd: str = os.getcwd()  
     test_dir: str = os.path.join(cwd,"test",CSA.mode,ID) # training/mode/env_type/images
     create_directories(test_dir=test_dir)
     # Model load
-    model: SAC = SAC.load(model_path)
+    modelD: SAC = SAC.load(model_pathD)
+    modelL: SAC = SAC.load(model_pathL)
     
     # Case D
     envD: CoupledStripEnv = CoupledStripEnv(CSA=CSA)
     # Run hybrid RL-GA
-    rl_energyD, ga_energyD = hybrid_algorithm(env=envD, model=model, image_dir=test_dir, case="CaseD")
+    rl_energyD, ga_energyD = hybrid_algorithm(env=envD, model=modelD, image_dir=test_dir, case="CaseD")
     
     # Case L
     CSA.hw_arra = original_hw_arra
     CSA.er2 = 1.0
     envL: CoupledStripEnv = CoupledStripEnv(CSA=CSA)
     # Run hybrid RL-GA
-    rl_energyL, ga_energyL = hybrid_algorithm(env=envL, model=model, image_dir=test_dir, case="CaseL")
+    rl_energyL, ga_energyL = hybrid_algorithm(env=envL, model=modelL, image_dir=test_dir, case="CaseL")
     
     data_rl: dict[str, float] = evaluate_metrics(V0=CSA.V0, energyD=rl_energyD,energyL=rl_energyL)
     data_ga: dict[str, float] = evaluate_metrics(V0=CSA.V0, energyD=ga_energyD,energyL=ga_energyL) # Change to ga when it is implemented
@@ -284,27 +285,79 @@ def run(CSA: CoupledStripArrangement, model_path: str, ID: str) -> tuple[float, 
     
     df.to_excel(os.path.join(test_dir,"hybrid_algo_metric.xlsx"))
     
-    return data_ga["zD"], data_ga["zL"]
+    return data_rl, data_ga
+
+def calculate_nominal_energy(Zd: float, Zl: float, V0: float) -> tuple[float, float]:
+    e0: float = 8.854187817E-12
+    
+    Cl: float = (376.62*e0)/Zl
+    Wl: float = 0.5*Cl*V0**2
+    
+    Cd: float = ((376.62*e0)/(Zd*(Cl**0.5)))**2
+    Wd: float = 0.5*Cd*V0**2
+    return Wd, Wl
+
+def main(CSA: CoupledStripArrangement, model_pathD: str, model_pathL: str) -> None:
+    # zD, zL = run(CSA=CSA, model_path=model_path,ID="TC-3")
+    # logger.info(f"The impedances are ZD: {zD} Ohm, ZL: {zL} Ohm")
+    df_test = pd.read_csv("./test/TC1-testcases.csv")
+    list_Wd_Nom: list[float] = []
+    list_Wl_Nom: list[float] = []
+    
+    for index, row in df_test.iterrows():
+        Wd, Wl = calculate_nominal_energy(Zd=row["Zd-Nominal"], Zl=row["Zl-Nominal"], V0=1)
+        list_Wd_Nom.append(Wd)
+        list_Wl_Nom.append(Wl)
+    df_test["Wd-Nominal"] = list_Wd_Nom
+    df_test["Wl-Nominal"] = list_Wl_Nom
+    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"TC1-testcases.xlsx"))    
+    
+    list_zD_RL: list[float] = []
+    list_zL_RL: list[float] = []
+    list_Wd_RL: list[float] = []
+    list_Wl_RL: list[float] = []
+    
+    list_zD_GA: list[float] = []
+    list_zL_GA: list[float] = []
+    list_Wd_GA: list[float] = []
+    list_Wl_GA: list[float] = []
+    
+    list_eps_eff_RL: list[float] = []
+    list_eps_eff_GA: list[float] = []
+    
+    for index, row in df_test.iterrows():
+        logger.info(f"ID: er2 = {row['er2']}")
+        CSA.er2 = row["er2"]
+        data_rl, data_ga = run(CSA=CSA, model_pathD=model_pathD,model_pathL=model_pathL,ID="TC-1_"+str(row['er2']))
+        list_zD_RL.append(data_rl["zD"])
+        list_zL_RL.append(data_rl["zL"])
         
-def main(CSA: CoupledStripArrangement, model_path: str) -> None:
-    zD, zL = run(CSA=CSA, model_path=model_path,ID="TC-3")
-    logger.info(f"The impedances are ZD: {zD} Ohm, ZL: {zL} Ohm")
-    # df_test = pd.read_csv("./test/s-h_testcase.csv")
-    # list_zD: list[float] = []
-    # list_zL: list[float] = []
-    # for index, row in df_test.iterrows():
-    #     logger.info(f"ID: s/h = {row['s/h']}")
-    #     CSA.er2 = 4.5
-    #     CSA.space_bw_strps = row['s']*1E-6
-    #     CSA.hw_arra = 3E-3 + CSA.space_bw_strps
-    #     zD, zL = run(CSA=CSA, model_path=model_path,ID="s-h_"+str(row["s/h"]))
-    #     list_zD.append(zD)
-    #     list_zL.append(zL)
+        list_zD_GA.append(data_ga["zD"])
+        list_zL_GA.append(data_ga["zL"])
+        
+        list_Wd_RL.append(data_rl["wD"])
+        list_Wl_RL.append(data_rl["wL"])
+        
+        list_Wd_GA.append(data_ga["wD"])
+        list_Wl_GA.append(data_ga["wL"])
+        
+        list_eps_eff_RL.append(data_rl["epsEff"])
+        list_eps_eff_GA.append(data_ga["epsEff"])
+        
+    df_test["Zd_RL"] = list_zD_RL
+    df_test["Zl_RL"] = list_zL_RL
+    df_test["Zd_GA"] = list_zD_GA
+    df_test["Zl_GA"] = list_zL_GA
     
-    # df_test["zD"] = list_zD
-    # df_test["zL"] = list_zL
+    df_test["Wd_RL"] = list_zD_RL
+    df_test["Wl_RL"] = list_zL_RL
+    df_test["Wd_GA"] = list_zD_GA
+    df_test["Wl_GA"] = list_zL_GA
     
-    # df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"s-h_test_result.xlsx"))
+    df_test["epseff_RL"] = list_eps_eff_RL
+    df_test["epseff_GA"] = list_eps_eff_GA
+    
+    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"TC1-testcases_result.xlsx"))
 
 
 if __name__ == "__main__":
@@ -323,5 +376,6 @@ if __name__ == "__main__":
         mode="Even"
     )
     
-    model_path = os.path.join("training","Even","TC-3","models","SAC_CSA_EVEN.zip")
-    main(CSA=CSA,model_path=model_path)
+    model_pathD = os.path.join("training","Even","caseD","models","SAC_CSA_EVEN.zip")
+    model_pathL = os.path.join("training","Even","caseL","models","SAC_CSA_EVEN.zip")
+    main(CSA=CSA,model_pathD=model_pathD,model_pathL=model_pathL)

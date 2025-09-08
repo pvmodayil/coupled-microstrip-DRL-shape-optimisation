@@ -43,7 +43,7 @@ class CoupledStripEnv(Env):
         
         # Calculate the baseline energy for scaling reward
         action_left: np.ndarray = np.array([0.4, 0.1, 0.1, 0.1, 0.1]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
-        action_right: NDArray = np.zeros(4)
+        action_right: NDArray = np.zeros(4, dtype=np.float64)
         x_left: NDArray
         g_left: NDArray
         _control: NDArray
@@ -332,10 +332,6 @@ class CoupledStripEnv(Env):
                 if self.energy_calculation_count == 0:
                     self.energy_calculation_count = 1
                     
-                # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
-                # constraint: float = self._soft_plus(MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
-                #             + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR)*CONSTRAINT_SCALING_FACTOR   
-                # Squashing to the bounds of [0,1]
                 reward = self._soft_plus((self.energy_baseline/energy)*reward_boost) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
             else:
                 penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
