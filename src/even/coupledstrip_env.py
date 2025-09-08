@@ -332,7 +332,7 @@ class CoupledStripEnv(Env):
                 if self.energy_calculation_count == 0:
                     self.energy_calculation_count = 1
                     
-                reward = (self.energy_baseline/energy)*reward_boost # (1/energy)/(1/self.energy_baseline) energy decrease value increase
+                reward = self._soft_plus(self.energy_baseline/energy)*reward_boost
             else:
                 penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
                             + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR
