@@ -308,7 +308,6 @@ class CoupledStripEnv(Env):
         MAX_CONVEXITY_PENALITY: float = -0.5
         # each check will have max value 1 so total max will be 2, need it to be constarined to 0.5 so that each check contributes +0.5 from MAX_PENALITY
         SCALING_FACTOR: float = 0.25
-        CONSTRAINT_SCALING_FACTOR: float = 2 
         reward: float
         penality: float
         reward_boost: float = 1
