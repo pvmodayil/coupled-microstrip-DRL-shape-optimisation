@@ -41,9 +41,9 @@ class CoupledStripEnv(Env):
         # Environment paramaters
         self.CSA: CoupledStripArrangement = CSA
         
-        # Calculate the baseline energy for scaling reward
-        action_left: np.ndarray = np.array([0.4, 0.1, 0.1, 0.1, 0.1]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
-        action_right: NDArray = np.zeros(4, dtype=np.float64)
+        # Calculate the baseline energy for scaling reward, values obtained from experimenting
+        action_left: np.ndarray = np.array([0.32504004, 0.00602925, 0.45255536, 0.11671948, 0.42468262]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
+        action_right: NDArray = np.array([0.00513768,  0.00094026,  0.00265706,  0.01932204])
         x_left: NDArray
         g_left: NDArray
         _control: NDArray
@@ -249,7 +249,7 @@ class CoupledStripEnv(Env):
                                                 vn=vn)
         return energy
     
-    def _soft_plus(self, x: float, beta: float = 1.0, threshold: float = 20.0) -> float:
+    def _soft_plus(self, x: float, beta: float = 0.5, threshold: float = 20.0) -> float:
         """
         _soft_plus 
         
@@ -320,8 +320,11 @@ class CoupledStripEnv(Env):
             logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action[0]}\n")
             self.minimum_energy = np.append(self.minimum_energy, energy)
 
-        # Smooth gradient rewards with soft plus function
-        reward = (self.energy_baseline/energy)**2
+        delta_change: float = 2*(self.energy_baseline - energy)/self.energy_baseline
+        if energy < self.energy_baseline:
+            reward = (1 + delta_change)**2
+        else:
+            reward = self._soft_plus(delta_change)
                 
         return reward
     
