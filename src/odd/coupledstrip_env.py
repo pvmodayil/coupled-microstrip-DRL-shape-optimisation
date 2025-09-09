@@ -71,6 +71,7 @@ class CoupledStripEnv(Env):
                                                     vn=vn)
         
         self.minimum_energy: NDArray = np.array([np.inf])
+        self.energy_calculation_count = 0
         # Define action and observation space
         """
         Action Space
@@ -326,6 +327,7 @@ class CoupledStripEnv(Env):
                 
                 if self.energy_calculation_count == 0:
                     self.energy_calculation_count = 1
+                    self.minimum_energy = np.append(self.minimum_energy, energy)
                     
                 reward = self._soft_plus((self.energy_baseline/energy)*reward_boost) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
             else:
