@@ -79,7 +79,7 @@ class CoupledStripEnv(Env):
             
         | Action          | Min               | Max                | Size       |   
         |-----------------|-------------------|--------------------|------------|
-        | control fcator  | -bound            | bound              | ndarray(4,)|
+        | control fcator  | -bound            | bound              | ndarray(8,)|
         
         """
         bound: float = 0.8
