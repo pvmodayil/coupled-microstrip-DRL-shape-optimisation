@@ -334,8 +334,7 @@ class CoupledStripEnv(Env):
                 self.minimum_energy = np.append(self.minimum_energy, energy)
 
             # Smooth gradient rewards with soft plus function
-            coefficient: float = 1/2
-            reward = coefficient*(3**((self.energy_baseline/energy)**2) - 1) # Shift it by 1 inorder to start from zero
+            reward = 3**((self.energy_baseline/energy)**2) - 1 # Shift it by 1 inorder to start from zero
             
         else:
             # Max val = -1 + 2/4 = -0.5
