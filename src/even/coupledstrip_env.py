@@ -304,7 +304,6 @@ class CoupledStripEnv(Env):
         """
         # Initialise
         MAX_PENALITY: float = -5
-        # each check will have max value 1 so total max will be 2, need it to be constarined to 0.5 so that each check contributes +0.5 from MAX_PENALITY
         reward: float
         
         # To promote some change
@@ -322,7 +321,7 @@ class CoupledStripEnv(Env):
             self.minimum_energy = np.append(self.minimum_energy, energy)
 
         # Smooth gradient rewards with soft plus function
-        reward = (self.energy_baseline/energy)**4
+        reward = (self.energy_baseline/energy)**2
                 
         return reward
     
