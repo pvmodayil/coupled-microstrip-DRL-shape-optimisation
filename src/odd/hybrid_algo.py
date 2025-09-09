@@ -29,6 +29,7 @@ import logging
 os.add_dll_directory(r'C:\mingw64\bin')
 from ga_lib import ga_cpp #type: ignore
 from _types import GAOptResult
+
 # Set OpenMP to max threads before using parallel functions
 ga_cpp.set_omp_to_max()
 
@@ -92,7 +93,7 @@ def possible_range(lower_bound: float, upper_bound: float) -> NDArray:
 def evaluate(env: CoupledStripEnv, model: SAC, new_hw_arra: float) -> float:
     env.CSA.hw_arra = new_hw_arra
     action: NDArray = predict(env=env, model=model)
-    mid_point: int = env.action_space.shape[0]//2
+    mid_point: int = env.action_space.shape[0]//2 + 1 
 
     x_left,g_left,_control = env.get_bezier_curve(action=action[:mid_point],side='left')
     x_right,g_right,_control = env.get_bezier_curve(action=action[mid_point:],side='right')
@@ -168,7 +169,7 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
     env.CSA.hw_arra = optimal_hw_arra(env=env, model=model, image_dir=image_dir, case=case)
     
     action: NDArray = predict(env=env, model=model)
-    mid_point: int = env.action_space.shape[0]//2
+    mid_point: int = env.action_space.shape[0]//2 + 1
 
     x_left,g_left,_control = env.get_bezier_curve(action=action[:mid_point],side='left')
     x_right,g_right,_control = env.get_bezier_curve(action=action[mid_point:],side='right')
@@ -189,7 +190,7 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
     
     # Call GA here
     logger.info("GA Optimization Started\n")
-    num_fs: int = 1000
+    num_fs: int = 2000
     noise_scale: float = 0.9
     population_size: int = 100
     num_generations: int = 1000
@@ -223,7 +224,7 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
     }
     pd.DataFrame(data_opt).to_excel(os.path.join(image_dir,f'{case}_optimized_curve.xlsx'), index=False)
     pd.DataFrame(data_opt).to_csv(os.path.join(image_dir,f'{case}_optimized_curve.csv'), index=False)
-    
+    plot_curve.plot_potential(x_left=x_left,g_left=g_left,x_right=x_right,g_right=g_right,image_dir=image_dir,name=case+"_GA")
     pd.DataFrame(convergence_data).to_excel(os.path.join(image_dir,f'{case}_convergence_curve.xlsx'), index=False)
 
     return rl_energy, ga_energy
@@ -248,26 +249,27 @@ def evaluate_metrics(V0, energyD, energyL) -> dict[str,float]:
     }
     
     return data
-def run(CSA: CoupledStripArrangement, model_path: str, ID: str) -> tuple[float, float]:
+def run(CSA: CoupledStripArrangement, model_pathD: str, model_pathL: str, ID: str) -> tuple[dict, dict]:
     # original hw_arra
     original_hw_arra: float = CSA.hw_arra
     cwd: str = os.getcwd()  
     test_dir: str = os.path.join(cwd,"test",CSA.mode,ID) # training/mode/env_type/images
     create_directories(test_dir=test_dir)
     # Model load
-    model: SAC = SAC.load(model_path)
+    modelD: SAC = SAC.load(model_pathD)
+    modelL: SAC = SAC.load(model_pathL)
     
     # Case D
     envD: CoupledStripEnv = CoupledStripEnv(CSA=CSA)
     # Run hybrid RL-GA
-    rl_energyD, ga_energyD = hybrid_algorithm(env=envD, model=model, image_dir=test_dir, case="CaseD")
+    rl_energyD, ga_energyD = hybrid_algorithm(env=envD, model=modelD, image_dir=test_dir, case="CaseD")
     
     # Case L
     CSA.hw_arra = original_hw_arra
     CSA.er2 = 1.0
     envL: CoupledStripEnv = CoupledStripEnv(CSA=CSA)
     # Run hybrid RL-GA
-    rl_energyL, ga_energyL = hybrid_algorithm(env=envL, model=model, image_dir=test_dir, case="CaseL")
+    rl_energyL, ga_energyL = hybrid_algorithm(env=envL, model=modelL, image_dir=test_dir, case="CaseL")
     
     data_rl: dict[str, float] = evaluate_metrics(V0=CSA.V0, energyD=rl_energyD,energyL=rl_energyL)
     data_ga: dict[str, float] = evaluate_metrics(V0=CSA.V0, energyD=ga_energyD,energyL=ga_energyL) # Change to ga when it is implemented
@@ -283,29 +285,84 @@ def run(CSA: CoupledStripArrangement, model_path: str, ID: str) -> tuple[float, 
     
     df.to_excel(os.path.join(test_dir,"hybrid_algo_metric.xlsx"))
     
-    return data_ga["zD"], data_ga["zL"]
-        
-def main(CSA: CoupledStripArrangement, model_path: str) -> None:
-    df_test = pd.read_csv("./test/s-h_testcase.csv")
-    list_zD: list[float] = []
-    list_zL: list[float] = []
+    return data_rl, data_ga
+
+def calculate_nominal_energy(Zd: float, Zl: float, V0: float) -> tuple[float, float]:
+    e0: float = 8.854187817E-12
+    
+    Cl: float = (376.62*e0)/Zl
+    Wl: float = 0.5*Cl*V0**2
+    
+    Cd: float = ((376.62*e0)/(Zd*(Cl**0.5)))**2
+    Wd: float = 0.5*Cd*V0**2
+    return Wd, Wl
+
+def main(CSA: CoupledStripArrangement, model_pathD: str, model_pathL: str) -> None:
+    # zD, zL = run(CSA=CSA, model_path=model_path,ID="TC-3")
+    # logger.info(f"The impedances are ZD: {zD} Ohm, ZL: {zL} Ohm")
+    df_test = pd.read_csv("./test/TC1-testcases.csv")
+    list_Wd_Nom: list[float] = []
+    list_Wl_Nom: list[float] = []
+    
     for index, row in df_test.iterrows():
-        logger.info(f"ID: s/h = {row['s/h']}")
-        CSA.er2 = 4.5
-        CSA.space_bw_strps = row['s']*1E-6
-        CSA.hw_arra = 3E-3 + CSA.space_bw_strps
-        zD, zL = run(CSA=CSA, model_path=model_path,ID="s-h_"+str(row["s/h"]))
-        list_zD.append(zD)
-        list_zL.append(zL)
+        Wd, Wl = calculate_nominal_energy(Zd=row["Zd-Nominal"], Zl=row["Zl-Nominal"], V0=1)
+        list_Wd_Nom.append(Wd)
+        list_Wl_Nom.append(Wl)
+    df_test["Wd-Nominal"] = list_Wd_Nom
+    df_test["Wl-Nominal"] = list_Wl_Nom
+    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"TC1-testcases.xlsx"))    
     
-    df_test["zD"] = list_zD
-    df_test["zL"] = list_zL
+    list_zD_RL: list[float] = []
+    list_zL_RL: list[float] = []
+    list_Wd_RL: list[float] = []
+    list_Wl_RL: list[float] = []
     
-    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"s-h_test_result.xlsx"))
+    list_zD_GA: list[float] = []
+    list_zL_GA: list[float] = []
+    list_Wd_GA: list[float] = []
+    list_Wl_GA: list[float] = []
+    
+    list_eps_eff_RL: list[float] = []
+    list_eps_eff_GA: list[float] = []
+    
+    for index, row in df_test.iterrows():
+        logger.info(f"ID: er2 = {row['er2']}")
+        CSA.er2 = row["er2"]
+        data_rl, data_ga = run(CSA=CSA, model_pathD=model_pathD,model_pathL=model_pathL,ID="TC-1_"+str(row['er2']))
+        list_zD_RL.append(data_rl["zD"])
+        list_zL_RL.append(data_rl["zL"])
+        
+        list_zD_GA.append(data_ga["zD"])
+        list_zL_GA.append(data_ga["zL"])
+        
+        list_Wd_RL.append(data_rl["wD"])
+        list_Wl_RL.append(data_rl["wL"])
+        
+        list_Wd_GA.append(data_ga["wD"])
+        list_Wl_GA.append(data_ga["wL"])
+        
+        list_eps_eff_RL.append(data_rl["epsEff"])
+        list_eps_eff_GA.append(data_ga["epsEff"])
+        
+    df_test["Zd_RL"] = list_zD_RL
+    df_test["Zl_RL"] = list_zL_RL
+    df_test["Zd_GA"] = list_zD_GA
+    df_test["Zl_GA"] = list_zL_GA
+    
+    df_test["Wd_RL"] = list_Wd_RL
+    df_test["Wl_RL"] = list_Wl_RL
+    df_test["Wd_GA"] = list_Wd_GA
+    df_test["Wl_GA"] = list_Wl_GA
+    
+    df_test["epseff_RL"] = list_eps_eff_RL
+    df_test["epseff_GA"] = list_eps_eff_GA
+    
+    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"TC1-testcases_result.xlsx"))
+
 
 if __name__ == "__main__":
     CSA: CoupledStripArrangement = CoupledStripArrangement(
-        V0=1., # Potential of the sytem, used to scale the system which is defaulted at V0=1.0
+        V0=1.0, # Potential of the sytem, used to scale the system which is defaulted at V0=1.0
         hw_arra=3E-3, # half width of the arrangement, parameter a
         ht_arra=2.76E-3, # height of the arrangement, parameter b
         ht_subs=112E-6, # height of the substrate, parameter h
@@ -314,10 +371,11 @@ if __name__ == "__main__":
         ht_micrstr=0, # height of the microstripm, parameter t
         er1=1.0, # dielectric constatnt for medium 1
         er2=4.5, # dielctric constant for medium 2
-        num_fs=1000, # number of fourier series coefficients
+        num_fs=2000, # number of fourier series coefficients
         num_pts=30, # number of points for the piece wise linear approaximation
         mode="Odd"
     )
     
-    model_path = os.path.join("training","Odd","caseD","models","SAC_CSA_ODD.zip")
-    main(CSA=CSA,model_path=model_path)
+    model_pathD = os.path.join("training","Odd","caseD","models","SAC_CSA_ODD.zip")
+    model_pathL = os.path.join("training","Odd","caseL","models","SAC_CSA_ODD.zip")
+    main(CSA=CSA,model_pathD=model_pathD,model_pathL=model_pathL)
