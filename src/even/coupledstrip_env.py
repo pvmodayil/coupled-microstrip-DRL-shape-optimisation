@@ -307,9 +307,9 @@ class CoupledStripEnv(Env):
         MAX_CONVEXITY_PENALITY: float = -0.5
         # each check will have max value 1 so total max will be 2, need it to be constarined to 0.5 so that each check contributes +0.5 from MAX_PENALITY
         SCALING_FACTOR: float = 0.25
-        CONSTRAINT_SCALING_FACTOR: float = 2 
         reward: float
         penality: float
+        constraint: float
         reward_boost: float = 1
         
         # To promote some change
@@ -319,21 +319,24 @@ class CoupledStripEnv(Env):
         
         # Check for monotonicity
         if csa_lib.is_monotone(g=g_left,type="increasing") and csa_lib.is_monotone(g=g_right,type="decreasing"):
+            
+            # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
+            penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
+                        + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR
+            constraint = np.tanh(penality)
+                
             energy: float = self.calculate_energy(g_left=g_left,
                                                     x_left=x_left,
                                                     g_right=g_right,
                                                     x_right=x_right)
             if energy < self.minimum_energy[-1]:
-                logger.info(f"New minimum energy obtained: {energy} VAs\n")
+                logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action[0]}\n")
                 self.minimum_energy = np.append(self.minimum_energy, energy)
-                reward_boost = 4
-                
-            # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
-            constraint: float = self._soft_plus(MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
-                        + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR)*CONSTRAINT_SCALING_FACTOR   
-            
+
             # Smooth gradient rewards with soft plus function
-            reward = self._soft_plus((self.energy_baseline/energy)*reward_boost + constraint) 
+            reward_boost = 1 - abs(energy - self.minimum_energy[-1])/self.minimum_energy[-1]
+            reward = self._soft_plus((self.energy_baseline/energy)*(1 + reward_boost)*(1 - constraint))
+            
         else:
             # Max val = -1 + 2/4 = -0.5
             penality = MAX_PENALITY + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
