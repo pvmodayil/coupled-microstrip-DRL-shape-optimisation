@@ -321,8 +321,9 @@ class CoupledStripEnv(Env):
         if energy < self.minimum_energy[-1]:
             logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action[0]}\n")
             self.minimum_energy = np.append(self.minimum_energy, energy)
+            reward_boost += 1
         if energy < self.energy_baseline:
-            reward_boost = 2
+            reward_boost += 2
 
         # Smooth gradient rewards with soft plus function
         reward = (self.energy_baseline/energy)**(2 + reward_boost)
