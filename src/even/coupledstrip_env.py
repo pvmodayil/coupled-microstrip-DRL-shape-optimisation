@@ -85,7 +85,7 @@ class CoupledStripEnv(Env):
         (0,action[0]), (action[1], action[2]), (action[3], action[4]), (s/2,1) => Left side
         (d,1), (action[5], action[6]), (action[7], action[8]), (a,0) => Right side
         """
-        bound: float = 0.8
+        bound: float = 1
         self.action_space: Box = Box(low=-bound, high=bound, shape=(9,), dtype=np.float32) #type:ignore
         self.action_space_bound: float = bound
         """
@@ -320,10 +320,10 @@ class CoupledStripEnv(Env):
         # Check for monotonicity
         if csa_lib.is_monotone(g=g_left,type="increasing") and csa_lib.is_monotone(g=g_right,type="decreasing"):
             
-            # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
-            penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
-                        + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR
-            constraint = np.tanh(-penality)
+            # # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
+            # penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
+            #             + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR
+            # constraint = np.tanh(-penality)
                 
             energy: float = self.calculate_energy(g_left=g_left,
                                                     x_left=x_left,
@@ -334,9 +334,8 @@ class CoupledStripEnv(Env):
                 self.minimum_energy = np.append(self.minimum_energy, energy)
 
             # Smooth gradient rewards with soft plus function
-            reward_boost = 1 - abs(energy - self.minimum_energy[-1])/self.minimum_energy[-1]
-            coefficient: float = 1 #(1 + reward_boost)*(1 - constraint)
-            reward = coefficient*(self.energy_baseline/energy)**2
+            coefficient: float = 1/2
+            reward = coefficient*(3**((self.energy_baseline/energy)**2) - 1) # Shift it by 1 inorder to start from zero
             
         else:
             # Max val = -1 + 2/4 = -0.5
