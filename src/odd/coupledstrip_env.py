@@ -303,7 +303,6 @@ class CoupledStripEnv(Env):
         MAX_CONVEXITY_PENALITY: float = -0.5
         # each check will have max value 1 so total max will be 2, need it to be constarined to 0.5 so that each check contributes +0.5 from MAX_PENALITY
         SCALING_FACTOR: float = 0.25
-        CONSTRAINT_SCALING_FACTOR: float = 2 
         reward: float
         penality: float
         reward_boost: float = 1
@@ -319,16 +318,20 @@ class CoupledStripEnv(Env):
                                                     x_left=x_left,
                                                     g_right=g_right,
                                                     x_right=x_right)
-            if energy < self.minimum_energy[-1]:
-                logger.info(f"New minimum energy obtained: {energy} VAs\n")
-                self.minimum_energy = np.append(self.minimum_energy, energy)
-                reward_boost = 4
+            if csa_lib.is_convex(g=g_left) and csa_lib.is_convex(g=g_right):
+                if (energy < self.minimum_energy[-1]) and (self.energy_calculation_count == 1):
+                    logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action[0]} \n")
+                    self.minimum_energy = np.append(self.minimum_energy, energy)
+                    reward_boost = 10
                 
-            # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
-            constraint: float = self._soft_plus(MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
-                        + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR)*CONSTRAINT_SCALING_FACTOR   
-            # Squashing to the bounds of [0,1]
-            reward = self._soft_plus((self.energy_baseline/energy)*reward_boost + constraint) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
+                if self.energy_calculation_count == 0:
+                    self.energy_calculation_count = 1
+                    
+                reward = self._soft_plus((self.energy_baseline/energy)*reward_boost) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
+            else:
+                penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
+                            + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR
+                reward = penality
         else:
             # Max val = -1 + 2/4 = -0.5
             penality = MAX_PENALITY + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 

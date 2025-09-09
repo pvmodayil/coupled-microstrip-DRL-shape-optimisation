@@ -78,7 +78,7 @@ def predict(env: CoupledStripEnv, model: SAC | BaseAlgorithm) -> NDArray[np.floa
     action: NDArray
     _states: tuple | None
     
-    action, _states = model.predict(obs_space)
+    action, _states = model.predict(obs_space, deterministic=True)
     
     return np.abs(action)
 class IntermediatePredictionCallback(BaseCallback):
@@ -255,7 +255,7 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     
 # main called function
 ######################      
-def main(CSA: CoupledStripArrangement) -> None:
+def main(CSA: CoupledStripArrangement, train_timesteps: int) -> None:
     # environment type
     env_type: str = "caseL" if CSA.er2 == 1.0 else "caseD"
     
@@ -280,7 +280,7 @@ def main(CSA: CoupledStripArrangement) -> None:
                                  log_dir=log_dir, 
                                  intermediate_pred_dir=intermediate_pred_dir,
                                  device=device,
-                                 timesteps=50000,
+                                 timesteps=train_timesteps,
                                  intermediate_pred_interval=5000,
                                  tb_log_name="CSA_ODD")
     
@@ -314,7 +314,7 @@ if __name__ == "__main__":
         er1=1.0, # dielectric constatnt for medium 1
         er2=4.5, # dielctric constant for medium 2
         num_fs=2000, # number of fourier series coefficients
-        num_pts=50, # number of points for the piece wise linear approaximation
-        mode="Odd"
+        num_pts=30, # number of points for the piece wise linear approaximation
+        mode="Even"
     )
-    main(CSA=CSA)
+    main(CSA=CSA, train_timesteps=30_000)
