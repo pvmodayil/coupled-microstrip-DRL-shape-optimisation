@@ -335,7 +335,7 @@ class CoupledStripEnv(Env):
 
             # Smooth gradient rewards with soft plus function
             reward_boost = 1 - abs(energy - self.minimum_energy[-1])/self.minimum_energy[-1]
-            coefficient: float = (1 + reward_boost)*(1 - constraint)
+            coefficient: float = 1 #(1 + reward_boost)*(1 - constraint)
             reward = coefficient*(self.energy_baseline/energy)**2
             
         else:
