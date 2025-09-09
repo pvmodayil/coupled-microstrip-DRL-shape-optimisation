@@ -320,7 +320,7 @@ class CoupledStripEnv(Env):
             logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action[0]}\n")
             self.minimum_energy = np.append(self.minimum_energy, energy)
 
-        delta_change: float = 2*(self.energy_baseline - energy)/self.energy_baseline
+        delta_change: float = 2*(self.energy_baseline/energy)
         
         reward = (2 + self._soft_plus(delta_change))**2
         
