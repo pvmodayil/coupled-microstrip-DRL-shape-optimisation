@@ -1,9 +1,10 @@
 // Include the header for this source file
 #include "genetic_algorithm.h"
 #include "coupledstrip_lib.h"
-#include <iostream>
+
 #include <random>
 #include <numeric>
+#include <iostream>
 #include <stdexcept>
 #include <format>
 
@@ -79,12 +80,15 @@ namespace GA{
         return delta;
      }
 
-     Eigen::ArrayXd GeneticAlgorithm::delta_to_curve(const Eigen::Ref<const Eigen::VectorXd>& delta, size_t vector_size, bool decreasing){
+     Eigen::ArrayXd GeneticAlgorithm::delta_to_curve(const Eigen::Ref<const Eigen::VectorXd>& delta, 
+        size_t vector_size, bool decreasing, 
+        double initial_value){
+
         Eigen::ArrayXd curve(vector_size);
         Eigen::ArrayXd cumsum(delta.size());
 
         if (decreasing){
-            curve(0) = 1;
+            curve(0) = initial_value;
             std::partial_sum(delta.data(), delta.data() + delta.size(), cumsum.data());
             // deltas are positive so subtract
             curve.bottomRows(vector_size-1) = curve(0) - cumsum;
@@ -92,7 +96,7 @@ namespace GA{
             return curve;
         }
         // Increasing case
-        curve(0) = 0;
+        curve(0) = initial_value;
         std::partial_sum(delta.data(), delta.data() + delta.size(), cumsum.data());
         curve.bottomRows(vector_size-1) = curve(0) + cumsum;
 
@@ -122,6 +126,10 @@ namespace GA{
             ).array() * population_right.array()
         ).matrix();
 
+        // Zero out noise for first column to retain original
+        random_noise_left.col(0).setZero();
+        random_noise_right.col(0).setZero();
+
         // Add noise to create the initial population
         population_left.noalias() += random_noise_left;
         population_right.noalias() += random_noise_right;
@@ -138,14 +146,6 @@ namespace GA{
     *******************************************************
     */
     double GeneticAlgorithm::calculate_fitness(Eigen::ArrayXd& individual_left,Eigen::ArrayXd& individual_right){
-        // Vector size (with the expectation that left and right side have same size)
-        size_t vector_size = individual_left.size();
-
-        // Since the entire curve is given for the crossover make sure the boundary values are correct
-        individual_left(0) = 0.0;
-        individual_left(vector_size-1) = 1.0;
-        individual_right(0) = 1.0;
-        individual_right(vector_size-1) = 0.0;
         
         // Check for necessary condition
         if (!CSA::is_monotone(individual_left,CSA::MonotoneType::Increasing) || !CSA::is_monotone(individual_right,CSA::MonotoneType::Decreasing)){
@@ -202,10 +202,14 @@ namespace GA{
     *                    SBX Crossover                    *
     *******************************************************
     */
-    void GeneticAlgorithm::crossover(Eigen::VectorXd& parent1, Eigen::VectorXd& parent2, Eigen::Ref<Eigen::VectorXd> child1, Eigen::Ref<Eigen::VectorXd> child2, double& eta){
+    void GeneticAlgorithm::crossover(Eigen::VectorXd& parent1, 
+        Eigen::VectorXd& parent2, 
+        Eigen::Ref<Eigen::VectorXd> child1, 
+        Eigen::Ref<Eigen::VectorXd> child2, 
+        double& eta){
         
         size_t parent_size = parent1.size();
-        double exponent = 1.0 / (eta + 1.0);
+        double exponent = 1.0 / (eta + 1.0); // Small eta means higher spread
 
         // Generate a vector of random numbers
         Eigen::ArrayXd u = 0.5 * (Eigen::ArrayXd::Random(parent_size) + 1); // Random numbers between 0 and 1
@@ -246,7 +250,7 @@ namespace GA{
     *                     Reproduction                    *
     *******************************************************
     */
-   double GeneticAlgorithm::get_eta(int generation, int num_generations){
+    double GeneticAlgorithm::get_eta(int generation, int num_generations){
         // exponentially increase eta from 0.5 to 2
         constexpr double eta_start = 0.5;
         constexpr double eta_end = 2.0;
@@ -254,10 +258,7 @@ namespace GA{
         return eta;
     }
 
-    void GeneticAlgorithm::reproduce(Eigen::MatrixXd& population_left, 
-        Eigen::MatrixXd& population_right, 
-        Eigen::ArrayXd& fitness_array, 
-        double& eta){
+    void GeneticAlgorithm::reproduce(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, Eigen::ArrayXd& fitness_array, double& eta){
         // Vector size (with the expectation that left and right side have same size)
         size_t delta_size = g_left_start.size() - 1; // Population is made up of deltas
 
@@ -305,10 +306,15 @@ namespace GA{
     *******************************************************
     */
     void GeneticAlgorithm::optimize(double& noise_scale, GAResult& result){
+        // Store the energy convergence
         size_t best_index = 0;
         double best_energy = result.energy_convergence(0);
         double previous_energy = result.best_energy;
         
+        // starting g0
+        double g0_left = 0.0;
+        double g0_right = 1.0;
+
         // Need the length for further processing
         size_t g_left_size = g_left_start.size();
         size_t g_right_size = g_right_start.size();
@@ -347,8 +353,13 @@ namespace GA{
             // Fitness calculation
             #pragma omp parallel for
             for(int i=0; i<population_size; ++i){
-                Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false);
-                Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true);
+                Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false,g0_left);
+                Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true,g0_right);
+                // Since the entire curve is given for the crossover make sure the boundary values are correct
+                individual_left(0) = g0_left;
+                individual_left(vector_size-1) = 1.0;
+                individual_right(0) = 1.0;
+                individual_right(vector_size-1) = 0.0;
                 fitness_array[i] = calculate_fitness(individual_left,individual_right);
             }
 
@@ -364,19 +375,24 @@ namespace GA{
         // Final population fitness calculation
         #pragma omp parallel for
         for(int i=0; i<population_size; ++i){
-            Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false);
-            Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true);
+            Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false,g0_left);
+            Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true,g0_right);
+            // Since the entire curve is given for the crossover make sure the boundary values are correct
+            individual_left(0) = g0_left;
+            individual_left(vector_size-1) = 1.0;
+            individual_right(0) = 1.0;
+            individual_right(vector_size-1) = 0.0;
             fitness_array[i] = calculate_fitness(individual_left,individual_right);
         }
 
         // Optimized curve and metrics
         best_energy = fitness_array.minCoeff(&best_index); // Get the best energy of the last generation
         
-        result.best_curve_left = delta_to_curve(population_left.col(best_index), vector_size, false); // Store the best curve of the last generation
-        result.best_curve_left(0) = 0.0;
+        result.best_curve_left = delta_to_curve(population_left.col(best_index), vector_size, false, g0_left); // Store the best curve of the last generation
+        result.best_curve_left(0) = g0_left;
         result.best_curve_left(vector_size-1) = 1.0;
 
-        result.best_curve_right = delta_to_curve(population_right.col(best_index), vector_size, true);
+        result.best_curve_right = delta_to_curve(population_right.col(best_index), vector_size, true, g0_right);
         result.best_curve_right(0) = 1.0;
         result.best_curve_right(vector_size-1) = 0.0;
 
