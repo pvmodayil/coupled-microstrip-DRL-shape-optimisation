@@ -321,10 +321,9 @@ class CoupledStripEnv(Env):
             self.minimum_energy = np.append(self.minimum_energy, energy)
 
         delta_change: float = 2*(self.energy_baseline - energy)/self.energy_baseline
-        if energy < self.energy_baseline:
-            reward = (1 + delta_change)**2
-        else:
-            reward = self._soft_plus(delta_change)
+        
+        reward = (2 + self._soft_plus(delta_change))**2
+        
         self.delta_energy = np.append(self.delta_energy,delta_change/2)       
         return reward
     
