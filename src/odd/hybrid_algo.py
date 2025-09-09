@@ -300,17 +300,17 @@ def calculate_nominal_energy(Zd: float, Zl: float, V0: float) -> tuple[float, fl
 def main(CSA: CoupledStripArrangement, model_pathD: str, model_pathL: str) -> None:
     # zD, zL = run(CSA=CSA, model_path=model_path,ID="TC-3")
     # logger.info(f"The impedances are ZD: {zD} Ohm, ZL: {zL} Ohm")
-    df_test = pd.read_csv("./test/TC1-testcases.csv")
-    list_Wd_Nom: list[float] = []
-    list_Wl_Nom: list[float] = []
+    df_test = pd.read_csv("./test/TC1-testcases-Odd.csv")
+    # list_Wd_Nom: list[float] = []
+    # list_Wl_Nom: list[float] = []
     
-    for index, row in df_test.iterrows():
-        Wd, Wl = calculate_nominal_energy(Zd=row["Zd-Nominal"], Zl=row["Zl-Nominal"], V0=1)
-        list_Wd_Nom.append(Wd)
-        list_Wl_Nom.append(Wl)
-    df_test["Wd-Nominal"] = list_Wd_Nom
-    df_test["Wl-Nominal"] = list_Wl_Nom
-    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"TC1-testcases.xlsx"))    
+    # for index, row in df_test.iterrows():
+    #     Wd, Wl = calculate_nominal_energy(Zd=row["Zd-Nominal"], Zl=row["Zl-Nominal"], V0=1)
+    #     list_Wd_Nom.append(Wd)
+    #     list_Wl_Nom.append(Wl)
+    # df_test["Wd-Nominal"] = list_Wd_Nom
+    # df_test["Wl-Nominal"] = list_Wl_Nom
+    # df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"TC1-testcases.xlsx"))    
     
     list_zD_RL: list[float] = []
     list_zL_RL: list[float] = []
