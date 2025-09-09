@@ -315,6 +315,6 @@ if __name__ == "__main__":
         er2=4.5, # dielctric constant for medium 2
         num_fs=2000, # number of fourier series coefficients
         num_pts=30, # number of points for the piece wise linear approaximation
-        mode="Even"
+        mode="Odd"
     )
     main(CSA=CSA, train_timesteps=30_000)
