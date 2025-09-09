@@ -323,7 +323,7 @@ class CoupledStripEnv(Env):
             # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
             penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
                         + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR
-            constraint = np.tanh(penality)
+            constraint = np.tanh(-penality)
                 
             energy: float = self.calculate_energy(g_left=g_left,
                                                     x_left=x_left,
@@ -335,7 +335,8 @@ class CoupledStripEnv(Env):
 
             # Smooth gradient rewards with soft plus function
             reward_boost = 1 - abs(energy - self.minimum_energy[-1])/self.minimum_energy[-1]
-            reward = self._soft_plus((self.energy_baseline/energy)*(1 + reward_boost)*(1 - constraint))
+            coefficient: float = (1 + reward_boost)*(1 - constraint)
+            reward = coefficient*(self.energy_baseline/energy)**2
             
         else:
             # Max val = -1 + 2/4 = -0.5
