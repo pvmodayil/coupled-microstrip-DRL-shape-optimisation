@@ -303,44 +303,29 @@ class CoupledStripEnv(Env):
             reward value
         """
         # Initialise
-        MAX_PENALITY: float = -1
-        MAX_CONVEXITY_PENALITY: float = -0.5
+        MAX_PENALITY: float = -5
         # each check will have max value 1 so total max will be 2, need it to be constarined to 0.5 so that each check contributes +0.5 from MAX_PENALITY
-        SCALING_FACTOR: float = 0.25
         reward: float
-        penality: float
-        constraint: float
-        reward_boost: float = 1
+        reward_boost: float = 0
         
         # To promote some change
         if np.all(action == 0):
             # conditon where no chnage happens
             return MAX_PENALITY
         
-        # Check for monotonicity
-        if csa_lib.is_monotone(g=g_left,type="increasing") and csa_lib.is_monotone(g=g_right,type="decreasing"):
-            
-            # # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
-            # penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
-            #             + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR
-            # constraint = np.tanh(-penality)
-                
-            energy: float = self.calculate_energy(g_left=g_left,
-                                                    x_left=x_left,
-                                                    g_right=g_right,
-                                                    x_right=x_right)
-            if energy < self.minimum_energy[-1]:
-                logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action[0]}\n")
-                self.minimum_energy = np.append(self.minimum_energy, energy)
+        # Monotonicity is embedded in the shape drawing, hence it need not be explicitly checked  
+        energy: float = self.calculate_energy(g_left=g_left,
+                                                x_left=x_left,
+                                                g_right=g_right,
+                                                x_right=x_right)
+        if energy < self.minimum_energy[-1]:
+            logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action[0]}\n")
+            self.minimum_energy = np.append(self.minimum_energy, energy)
+        if energy < self.energy_baseline:
+            reward_boost = 2
 
-            # Smooth gradient rewards with soft plus function
-            reward = 3**((self.energy_baseline/energy)**2) - 1 # Shift it by 1 inorder to start from zero
-            
-        else:
-            # Max val = -1 + 2/4 = -0.5
-            penality = MAX_PENALITY + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
-                           + csa_lib.degree_monotonicity(g=g_right,type='decreasing')/self.CSA.num_pts)*SCALING_FACTOR
-            reward = penality
+        # Smooth gradient rewards with soft plus function
+        reward = (self.energy_baseline/energy)**(2 + reward_boost)
                 
         return reward
     
