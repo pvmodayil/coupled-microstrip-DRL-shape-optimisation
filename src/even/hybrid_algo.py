@@ -310,7 +310,7 @@ def main(CSA: CoupledStripArrangement, model_pathD: str, model_pathL: str) -> No
         list_Wl_Nom.append(Wl)
     df_test["Wd-Nominal"] = list_Wd_Nom
     df_test["Wl-Nominal"] = list_Wl_Nom
-    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"TC1-testcases.xlsx"))    
+    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"TC1-testcases-Even.xlsx"))    
     
     list_zD_RL: list[float] = []
     list_zL_RL: list[float] = []
@@ -376,6 +376,6 @@ if __name__ == "__main__":
         mode="Even"
     )
     
-    model_pathD = os.path.join("training","Even_best","TC-1","caseD","models","SAC_CSA_EVEN.zip")
-    model_pathL = os.path.join("training","Even_best","TC-1","caseL","models","SAC_CSA_EVEN.zip")
+    model_pathD = os.path.join("training","Even_best","TC-3","caseD","models","SAC_CSA_EVEN.zip")
+    model_pathL = os.path.join("training","Even_best","TC-3","caseL","models","SAC_CSA_EVEN.zip")
     main(CSA=CSA,model_pathD=model_pathD,model_pathL=model_pathL)
