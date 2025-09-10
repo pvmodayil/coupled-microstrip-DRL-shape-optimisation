@@ -42,8 +42,8 @@ class CoupledStripEnv(Env):
         self.CSA: CoupledStripArrangement = CSA
         
         # Calculate the baseline energy for scaling reward, values obtained from experimenting
-        action_left: np.ndarray = np.array([0.32504004, 0.00602925, 0.45255536, 0.11671948, 0.42468262]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
-        action_right: NDArray = np.array([0.00513768,  0.00094026,  0.00265706,  0.01932204])
+        action_left: np.ndarray = np.zeros(5)#np.array([0.32504004, 0.00602925, 0.45255536, 0.11671948, 0.42468262]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
+        action_right: NDArray = #np.array([0.00513768,  0.00094026,  0.00265706,  0.01932204])
         x_left: NDArray
         g_left: NDArray
         _control: NDArray
@@ -320,11 +320,11 @@ class CoupledStripEnv(Env):
             logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action[0]}\n")
             self.minimum_energy = np.append(self.minimum_energy, energy)
 
-        delta_change: float = 2*(self.energy_baseline/energy)
+        delta_change: float = 10*(self.energy_baseline/energy)
         
-        reward = (2 + self._soft_plus(delta_change))**2
+        reward = self._soft_plus(delta_change**2)
         
-        self.delta_energy = np.append(self.delta_energy,delta_change/2)       
+        self.delta_energy = np.append(self.delta_energy,delta_change/10)       
         return reward
     
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[NDArray, dict]:
