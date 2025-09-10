@@ -248,32 +248,6 @@ class CoupledStripEnv(Env):
                                                 ht_subs=self.CSA.ht_subs,
                                                 vn=vn)
         return energy
-    
-    def _soft_plus(self, x: float, beta: float = 1, threshold: float = 20.0) -> float:
-        """
-        _soft_plus 
-        
-        Function to smoothen the rewards for better gradient
-        
-        Parameters
-        ----------
-        x : float
-            raw reward value
-        beta : float, optional
-            scaling factor, by default 1.0
-        threshold : float, optional
-            threshold to prevent overflow, by default 20.0
-
-        Returns
-        -------
-        float
-            smoothened reward value
-        """
-        x_beta: float = beta * x
-        if x_beta > threshold:
-            return x_beta  # avoid overflow exp for large x
-        else:
-            return (1 / beta) * np.log1p(np.exp(x_beta))
         
     def get_reward(self,
             action: NDArray[np.float64],
@@ -305,7 +279,6 @@ class CoupledStripEnv(Env):
         # Initialise
         MAX_PENALITY: float = -5
         reward: float
-        reward_boost: float = 1
         
         # To promote some change
         if np.all(action == 0):
@@ -318,16 +291,13 @@ class CoupledStripEnv(Env):
                                                 g_right=g_right,
                                                 x_right=x_right)
         if energy < self.minimum_energy[-1]:
-            logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action}\n")
+            logger.info(f"New minimum energy obtained: {energy} VAs\n")
             self.minimum_energy = np.append(self.minimum_energy, energy)
-
-        if energy < self.energy_baseline:
-            reward_boost = 2
             
         ratio_change: float = self.energy_baseline/energy
         
         # Shift the ratio by -1 as the soft plus function has exponential deviation in that range
-        reward = (self._soft_plus(x=reward_boost*(ratio_change - 1), beta=0.5))**2
+        reward = (ratio_change*10E-5)*np.exp(12*ratio_change)
         
         self.delta_energy = np.append(self.delta_energy,ratio_change)       
         return reward
