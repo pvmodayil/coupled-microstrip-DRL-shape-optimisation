@@ -42,8 +42,8 @@ class CoupledStripEnv(Env):
         self.CSA: CoupledStripArrangement = CSA
         
         # Calculate the baseline energy for scaling reward, values obtained from experimenting
-        action_left: np.ndarray = np.zeros(5)#np.array([0.32504004, 0.00602925, 0.45255536, 0.11671948, 0.42468262]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
-        action_right: NDArray = #np.array([0.00513768,  0.00094026,  0.00265706,  0.01932204])
+        action_left: np.ndarray = np.array([2.4130917e-01, 3.7119985e-03, 2.7379811e-01, 2.7453065e-01, 4.8928428e-01]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
+        action_right: NDArray = np.array([4.6533346e-03, 3.4177303e-04, 2.8191209e-03, 8.0303347e-01])
         x_left: NDArray
         g_left: NDArray
         _control: NDArray
@@ -305,6 +305,7 @@ class CoupledStripEnv(Env):
         # Initialise
         MAX_PENALITY: float = -5
         reward: float
+        reward_boost: float = 1
         
         # To promote some change
         if np.all(action == 0):
@@ -317,14 +318,16 @@ class CoupledStripEnv(Env):
                                                 g_right=g_right,
                                                 x_right=x_right)
         if energy < self.minimum_energy[-1]:
-            logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action[0]}\n")
+            logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action}\n")
             self.minimum_energy = np.append(self.minimum_energy, energy)
 
-        delta_change: float = 10*(self.energy_baseline/energy)
+        if energy < self.energy_baseline:
+            reward_boost = 2
+        delta_change: float = self.energy_baseline/energy
         
-        reward = self._soft_plus(delta_change**2)
+        reward = self._soft_plus((reward_boost*delta_change)**2)
         
-        self.delta_energy = np.append(self.delta_energy,delta_change/10)       
+        self.delta_energy = np.append(self.delta_energy,delta_change)       
         return reward
     
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[NDArray, dict]:
