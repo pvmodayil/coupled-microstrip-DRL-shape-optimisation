@@ -41,9 +41,9 @@ class CoupledStripEnv(Env):
         # Environment paramaters
         self.CSA: CoupledStripArrangement = CSA
         
-        # Calculate the baseline energy for scaling reward
-        action_left: np.ndarray = np.array([0.4, 0.1, 0.1, 0.1, 0.1]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
-        action_right: NDArray = np.zeros(4)
+        # Calculate the baseline energy for scaling reward, values obtained from experimenting
+        action_left: np.ndarray = np.zeros(5)#np.array([2.4130917e-01, 3.7119985e-03, 2.7379811e-01, 2.7453065e-01, 4.8928428e-01]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
+        action_right: NDArray = np.zeros(4)#np.array([4.6533346e-03, 3.4177303e-04, 2.8191209e-03, 8.0303347e-01])
         x_left: NDArray
         g_left: NDArray
         _control: NDArray
@@ -285,36 +285,21 @@ class CoupledStripEnv(Env):
             # conditon where no chnage happens
             return MAX_PENALITY
         
-        # Check for monotonicity
-        if csa_lib.is_monotone(g=g_left,type="increasing") and csa_lib.is_monotone(g=g_right,type="decreasing"):
-            energy: float = self.calculate_energy(g_left=g_left,
-                                                    x_left=x_left,
-                                                    g_right=g_right,
-                                                    x_right=x_right)
-            if csa_lib.is_convex(g=g_left) and csa_lib.is_convex(g=g_right):
-                if (energy < self.minimum_energy[-1]) and (self.energy_calculation_count == 1):
-                    logger.info(f"New minimum energy obtained: {energy} VAs with G0: {action[0]} \n")
-                    self.minimum_energy = np.append(self.minimum_energy, energy)
-                    reward_boost = 10
-                
-                if self.energy_calculation_count == 0:
-                    self.energy_calculation_count = 1
-                    
-                # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
-                # constraint: float = self._soft_plus(MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
-                #             + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR)*CONSTRAINT_SCALING_FACTOR   
-                # Squashing to the bounds of [0,1]
-                reward = self._soft_plus((self.energy_baseline/energy)*reward_boost) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
-            else:
-                penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
-                            + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR
-                reward = penality
-        else:
-            # Max val = -1 + 2/4 = -0.5
-            penality = MAX_PENALITY + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
-                           + csa_lib.degree_monotonicity(g=g_right,type='decreasing')/self.CSA.num_pts)*SCALING_FACTOR
-            reward = penality
-                
+        # Monotonicity is embedded in the shape drawing, hence it need not be explicitly checked  
+        energy: float = self.calculate_energy(g_left=g_left,
+                                                x_left=x_left,
+                                                g_right=g_right,
+                                                x_right=x_right)
+        if energy < self.minimum_energy[-1]:
+            logger.info(f"New minimum energy obtained: {energy} VAs\n")
+            self.minimum_energy = np.append(self.minimum_energy, energy)
+            
+        ratio_change: float = self.energy_baseline/energy
+        
+        # Shift the ratio by -1 as the soft plus function has exponential deviation in that range
+        reward = (ratio_change*10E-5)*np.exp(12*ratio_change)
+        
+        self.delta_energy = np.append(self.delta_energy,ratio_change)       
         return reward
     
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[NDArray, dict]:
