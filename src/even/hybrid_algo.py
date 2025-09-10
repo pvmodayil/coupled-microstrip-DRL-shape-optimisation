@@ -300,7 +300,7 @@ def calculate_nominal_energy(Zd: float, Zl: float, V0: float) -> tuple[float, fl
 def main(CSA: CoupledStripArrangement, model_pathD: str, model_pathL: str) -> None:
     # zD, zL = run(CSA=CSA, model_path=model_path,ID="TC-3")
     # logger.info(f"The impedances are ZD: {zD} Ohm, ZL: {zL} Ohm")
-    df_test = pd.read_csv("./test/TC1-testcases.csv")
+    df_test = pd.read_csv("./test/TC1-testcases-Even.csv")
     list_Wd_Nom: list[float] = []
     list_Wl_Nom: list[float] = []
     
@@ -310,7 +310,7 @@ def main(CSA: CoupledStripArrangement, model_pathD: str, model_pathL: str) -> No
         list_Wl_Nom.append(Wl)
     df_test["Wd-Nominal"] = list_Wd_Nom
     df_test["Wl-Nominal"] = list_Wl_Nom
-    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"TC1-testcases-Even.xlsx"))    
+    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"TC3-testcases.xlsx"))    
     
     list_zD_RL: list[float] = []
     list_zL_RL: list[float] = []
@@ -328,7 +328,7 @@ def main(CSA: CoupledStripArrangement, model_pathD: str, model_pathL: str) -> No
     for index, row in df_test.iterrows():
         logger.info(f"ID: er2 = {row['er2']}")
         CSA.er2 = row["er2"]
-        data_rl, data_ga = run(CSA=CSA, model_pathD=model_pathD,model_pathL=model_pathL,ID="TC-1_"+str(row['er2']))
+        data_rl, data_ga = run(CSA=CSA, model_pathD=model_pathD,model_pathL=model_pathL,ID="TC-3_"+str(row['er2']))
         list_zD_RL.append(data_rl["zD"])
         list_zL_RL.append(data_rl["zL"])
         
@@ -357,7 +357,7 @@ def main(CSA: CoupledStripArrangement, model_pathD: str, model_pathL: str) -> No
     df_test["epseff_RL"] = list_eps_eff_RL
     df_test["epseff_GA"] = list_eps_eff_GA
     
-    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"TC1-testcases_result.xlsx"))
+    df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"TC3-testcases_result.xlsx"))
 
 
 if __name__ == "__main__":
