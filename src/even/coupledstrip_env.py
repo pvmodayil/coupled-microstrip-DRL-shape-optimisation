@@ -43,7 +43,7 @@ class CoupledStripEnv(Env):
         
         # Calculate the baseline energy for scaling reward
         action_left: np.ndarray = np.array([0.4, 0.1, 0.1, 0.1, 0.1]) # P0Y, P1X, deviation of P1Y from P0Y, deviation of P2X from P1X, deviation of P2Y from P1Y
-        action_right: NDArray = np.zeros(4, dtype=np.float64)
+        action_right: NDArray = np.zeros(4)
         x_left: NDArray
         g_left: NDArray
         _control: NDArray
@@ -70,9 +70,8 @@ class CoupledStripEnv(Env):
                                                     ht_subs=self.CSA.ht_subs,
                                                     vn=vn)
         # logger.info(f"Initial energy: {self.energy_baseline} VAs")
-        self.minimum_energy: NDArray = np.array([np.inf])
-        self.energy_calculation_count: int = 0
-        
+        self.minimum_energy: NDArray = np.array([self.energy_baseline])
+        self.delta_energy: NDArray = np.array([])
         # Define action and observation space
         """
         Action Space
@@ -86,7 +85,7 @@ class CoupledStripEnv(Env):
         (0,action[0]), (action[1], action[2]), (action[3], action[4]), (s/2,1) => Left side
         (d,1), (action[5], action[6]), (action[7], action[8]), (a,0) => Right side
         """
-        bound: float = 0.8
+        bound: float = 1
         self.action_space: Box = Box(low=-bound, high=bound, shape=(9,), dtype=np.float32) #type:ignore
         self.action_space_bound: float = bound
         """
@@ -249,32 +248,6 @@ class CoupledStripEnv(Env):
                                                 ht_subs=self.CSA.ht_subs,
                                                 vn=vn)
         return energy
-    
-    def _soft_plus(self, x: float, beta: float = 1.0, threshold: float = 20.0) -> float:
-        """
-        _soft_plus 
-        
-        Function to smoothen the rewards for better gradient
-        
-        Parameters
-        ----------
-        x : float
-            raw reward value
-        beta : float, optional
-            scaling factor, by default 1.0
-        threshold : float, optional
-            threshold to prevent overflow, by default 20.0
-
-        Returns
-        -------
-        float
-            smoothened reward value
-        """
-        x_beta: float = beta * x
-        if x_beta > threshold:
-            return x_beta  # avoid overflow exp for large x
-        else:
-            return (1 / beta) * np.log1p(np.exp(x_beta))
         
     def get_reward(self,
             action: NDArray[np.float64],
@@ -304,13 +277,8 @@ class CoupledStripEnv(Env):
             reward value
         """
         # Initialise
-        MAX_PENALITY: float = -1
-        MAX_CONVEXITY_PENALITY: float = -0.5
-        # each check will have max value 1 so total max will be 2, need it to be constarined to 0.5 so that each check contributes +0.5 from MAX_PENALITY
-        SCALING_FACTOR: float = 0.25
+        MAX_PENALITY: float = -5
         reward: float
-        penality: float
-        reward_boost: float = 1
         
         # To promote some change
         if np.all(action == 0):
@@ -332,6 +300,10 @@ class CoupledStripEnv(Env):
                 if self.energy_calculation_count == 0:
                     self.energy_calculation_count = 1
                     
+                # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
+                # constraint: float = self._soft_plus(MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
+                #             + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR)*CONSTRAINT_SCALING_FACTOR   
+                # Squashing to the bounds of [0,1]
                 reward = self._soft_plus((self.energy_baseline/energy)*reward_boost) # (1/energy)/(1/self.energy_baseline) energy decrease value increase
             else:
                 penality = MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
