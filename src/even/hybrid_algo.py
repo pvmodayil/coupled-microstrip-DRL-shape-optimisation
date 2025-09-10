@@ -376,6 +376,6 @@ if __name__ == "__main__":
         mode="Even"
     )
     
-    model_pathD = os.path.join("training","Even","caseD","models","SAC_CSA_EVEN.zip")
-    model_pathL = os.path.join("training","Even","caseL","models","SAC_CSA_EVEN.zip")
+    model_pathD = os.path.join("training","Even_best","TC-1","caseD","models","SAC_CSA_EVEN.zip")
+    model_pathL = os.path.join("training","Even_best","TC-1","caseL","models","SAC_CSA_EVEN.zip")
     main(CSA=CSA,model_pathD=model_pathD,model_pathL=model_pathL)

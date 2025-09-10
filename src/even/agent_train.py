@@ -260,10 +260,10 @@ def main(CSA: CoupledStripArrangement, train_timesteps: int) -> None:
     env_type: str = "caseL" if CSA.er2 == 1.0 else "caseD"
     
     cwd: str = os.getcwd()  
-    model_dir: str = os.path.join(cwd,"training",CSA.mode,env_type,"models") # training/mode/env_type/models
-    log_dir: str = os.path.join(cwd,"training",CSA.mode,env_type,"logs") # training/mode/env_type/logs
-    image_dir: str = os.path.join(cwd,"training",CSA.mode,env_type,"images") # training/mode/env_type/images
-    intermediate_pred_dir: str = os.path.join(cwd,"training",CSA.mode,env_type,"intermediate_prediction") # training/mode/env_type/intermediate_prediction
+    model_dir: str = os.path.join(cwd,"training",CSA.mode,"TC-3",env_type,"models") # training/mode/env_type/models
+    log_dir: str = os.path.join(cwd,"training",CSA.mode,"TC-3",env_type,"logs") # training/mode/env_type/logs
+    image_dir: str = os.path.join(cwd,"training",CSA.mode,"TC-3",env_type,"images") # training/mode/env_type/images
+    intermediate_pred_dir: str = os.path.join(cwd,"training","TC-3",CSA.mode,env_type,"intermediate_prediction") # training/mode/env_type/intermediate_prediction
     create_directories(mdirRoot=model_dir, 
                     ldirRoot=log_dir, 
                     idirRoot=image_dir, 
@@ -312,9 +312,9 @@ if __name__ == "__main__":
         width_micrstr=150E-6, # width of the microstrip, parameter w
         ht_micrstr=0, # height of the microstripm, parameter t
         er1=1.0, # dielectric constatnt for medium 1
-        er2=1.0, # dielctric constant for medium 2
+        er2=12.9, # dielctric constant for medium 2
         num_fs=2000, # number of fourier series coefficients
         num_pts=30, # number of points for the piece wise linear approaximation
-        mode="Even"
+        mode="Even_best"
     )
     main(CSA=CSA, train_timesteps=30_000)
