@@ -291,7 +291,7 @@ class CoupledStripEnv(Env):
                                                 g_right=g_right,
                                                 x_right=x_right)
         if energy < self.minimum_energy[-1]:
-            logger.info(f"New minimum energy obtained: {energy} VAs\n")
+            # logger.info(f"New minimum energy obtained: {energy} VAs\n")
             self.minimum_energy = np.append(self.minimum_energy, energy)
             
         ratio_change: float = self.energy_baseline/energy
