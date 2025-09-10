@@ -323,11 +323,13 @@ class CoupledStripEnv(Env):
 
         if energy < self.energy_baseline:
             reward_boost = 2
-        delta_change: float = self.energy_baseline/energy
+            
+        ratio_change: float = self.energy_baseline/energy
         
-        reward = self._soft_plus((reward_boost*delta_change)**2)
+        # Shift the ratio by -1 as the soft plus function has exponential deviation in that range
+        reward = (self._soft_plus(x=reward_boost*(ratio_change - 1), beta=0.5))**2
         
-        self.delta_energy = np.append(self.delta_energy,delta_change)       
+        self.delta_energy = np.append(self.delta_energy,ratio_change)       
         return reward
     
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[NDArray, dict]:
