@@ -71,7 +71,7 @@ class CoupledStripEnv(Env):
                                                     vn=vn)
         
         self.minimum_energy: NDArray = np.array([self.energy_baseline])
-        self.energy_calculation_count: int = 0
+        
         # Define action and observation space
         """
         Action Space
@@ -83,7 +83,7 @@ class CoupledStripEnv(Env):
         | control fcator  | -bound            | bound              | ndarray(4,)|
         
         """
-        bound: float = 0.8
+        bound: float = 1
         self.action_space: Box = Box(low=-bound, high=bound, shape=(8,), dtype=np.float32) #type:ignore
         self.action_space_bound: float = bound
         """
@@ -245,32 +245,6 @@ class CoupledStripEnv(Env):
                                                 ht_subs=self.CSA.ht_subs,
                                                 vn=vn)
         return energy
-    
-    def _soft_plus(self, x: float, beta: float = 1.0, threshold: float = 20.0) -> float:
-        """
-        _soft_plus 
-        
-        Function to smoothen the rewards for better gradient
-        
-        Parameters
-        ----------
-        x : float
-            raw reward value
-        beta : float, optional
-            scaling factor, by default 1.0
-        threshold : float, optional
-            threshold to prevent overflow, by default 20.0
-
-        Returns
-        -------
-        float
-            smoothened reward value
-        """
-        x_beta: float = beta * x
-        if x_beta > threshold:
-            return x_beta  # avoid overflow exp for large x
-        else:
-            return (1 / beta) * np.log1p(np.exp(x_beta))
         
     def get_reward(self,
             action: NDArray[np.float64],
@@ -300,43 +274,28 @@ class CoupledStripEnv(Env):
             reward value
         """
         # Initialise
-        MAX_PENALITY: float = -1
-        MAX_CONVEXITY_PENALITY: float = -0.5
-        # each check will have max value 1 so total max will be 2, need it to be constarined to 0.5 so that each check contributes +0.5 from MAX_PENALITY
-        SCALING_FACTOR: float = 0.25
-        CONSTRAINT_SCALING_FACTOR: float = 2 
+        MAX_PENALITY: float = -5
         reward: float
-        penality: float
-        reward_boost: float = 1
         
         # To promote some change
         if np.all(action == 0):
             # conditon where no chnage happens
             return MAX_PENALITY
         
-        # Check for monotonicity
-        if csa_lib.is_monotone(g=g_left,type="increasing") and csa_lib.is_monotone(g=g_right,type="decreasing"):
-            energy: float = self.calculate_energy(g_left=g_left,
-                                                    x_left=x_left,
-                                                    g_right=g_right,
-                                                    x_right=x_right)
-            if energy < self.minimum_energy[-1]:
-                logger.info(f"New minimum energy obtained: {energy} VAs\n")
-                self.minimum_energy = np.append(self.minimum_energy, energy)
-                reward_boost = 4
-                
-            # Max val = -0.5 + 2/4 = 0 , if monotonicity satisfied base value will be -0.5
-            constraint: float = self._soft_plus(MAX_CONVEXITY_PENALITY + (csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts 
-                        + csa_lib.degree_convexity(g=g_left)/self.CSA.num_pts)*SCALING_FACTOR)*CONSTRAINT_SCALING_FACTOR   
+        # Monotonicity is embedded in the shape drawing, hence it need not be explicitly checked  
+        energy: float = self.calculate_energy(g_left=g_left,
+                                                x_left=x_left,
+                                                g_right=g_right,
+                                                x_right=x_right)
+        if energy < self.minimum_energy[-1]:
+            # logger.info(f"New minimum energy obtained: {energy} VAs\n")
+            self.minimum_energy = np.append(self.minimum_energy, energy)
             
-            # Smooth gradient rewards with soft plus function
-            reward = self._soft_plus((self.energy_baseline/energy)*reward_boost + constraint) 
-        else:
-            # Max val = -1 + 2/4 = -0.5
-            penality = MAX_PENALITY + (csa_lib.degree_monotonicity(g=g_left,type='increasing')/self.CSA.num_pts 
-                           + csa_lib.degree_monotonicity(g=g_right,type='decreasing')/self.CSA.num_pts)*SCALING_FACTOR
-            reward = penality
-                
+        ratio_change: float = self.energy_baseline/energy
+        
+        # Shift the ratio by -1 as the soft plus function has exponential deviation in that range
+        reward = (ratio_change*10E-5)*np.exp(12*ratio_change)
+           
         return reward
     
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[NDArray, dict]:
