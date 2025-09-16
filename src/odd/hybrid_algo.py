@@ -190,10 +190,10 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
     
     # Call GA here
     logger.info("GA Optimization Started\n")
-    num_fs: int = 2000
+    num_fs: int = 1500
     noise_scale: float = 0.9
     population_size: int = 100
-    num_generations: int = 1000
+    num_generations: int = 600
     result: GAOptResult = ga_cpp.ga_optimize(env.CSA.V0,
                                     env.CSA.space_bw_strps,
                                     env.CSA.width_micrstr,
@@ -373,9 +373,9 @@ if __name__ == "__main__":
         er2=4.5, # dielctric constant for medium 2
         num_fs=2000, # number of fourier series coefficients
         num_pts=30, # number of points for the piece wise linear approaximation
-        mode="Odd"
+        mode="ODD"
     )
     
-    model_pathD = os.path.join("training","Odd","caseD","models","SAC_CSA_ODD.zip")
-    model_pathL = os.path.join("training","Odd","caseL","models","SAC_CSA_ODD.zip")
+    model_pathD = os.path.join("training","ODD","TC1","caseD","models","SAC_CSA_ODD.zip")
+    model_pathL = os.path.join("training","ODD","TC1","caseL","models","SAC_CSA_ODD.zip")
     main(CSA=CSA,model_pathD=model_pathD,model_pathL=model_pathL)

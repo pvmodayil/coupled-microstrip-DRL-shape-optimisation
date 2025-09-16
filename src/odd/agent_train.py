@@ -312,9 +312,9 @@ if __name__ == "__main__":
         width_micrstr=150E-6, # width of the microstrip, parameter w
         ht_micrstr=0, # height of the microstripm, parameter t
         er1=1.0, # dielectric constatnt for medium 1
-        er2=1.0, # dielctric constant for medium 2
+        er2=12.9, # dielctric constant for medium 2
         num_fs=2000, # number of fourier series coefficients
         num_pts=30, # number of points for the piece wise linear approaximation
         mode="ODD"
     )
-    main(CSA=CSA, train_timesteps=30_000, TC="TC1")
+    main(CSA=CSA, train_timesteps=30_000, TC="TC3")
