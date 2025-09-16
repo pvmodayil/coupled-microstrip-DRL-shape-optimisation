@@ -155,7 +155,6 @@ def train(env: CoupledStripEnv,
     model_save_path: str = os.path.join(model_dir, "SAC_CSA_EVEN")
     model.save(model_save_path, include="all")
     
-    pd.DataFrame({'delta_energy': env.delta_energy}).to_excel(os.path.join(intermediate_pred_dir,"delta.xlsx"))
     logger.info(f"Training completed and model saved at {model_save_path}.")      
     
     return model_save_path

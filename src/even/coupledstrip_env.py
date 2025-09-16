@@ -71,7 +71,7 @@ class CoupledStripEnv(Env):
                                                     vn=vn)
         # logger.info(f"Initial energy: {self.energy_baseline} VAs")
         self.minimum_energy: NDArray = np.array([self.energy_baseline])
-        self.delta_energy: NDArray = np.array([])
+        
         # Define action and observation space
         """
         Action Space
@@ -298,8 +298,7 @@ class CoupledStripEnv(Env):
         
         # Shift the ratio by -1 as the soft plus function has exponential deviation in that range
         reward = (ratio_change*10E-5)*np.exp(12*ratio_change)
-        
-        self.delta_energy = np.append(self.delta_energy,ratio_change)       
+           
         return reward
     
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[NDArray, dict]:
