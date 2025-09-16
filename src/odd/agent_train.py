@@ -152,7 +152,7 @@ def train(env: CoupledStripEnv,
     logger.info(f"Training ended with total training time: {training_time}......")
     
     # Save the trained model
-    model_save_path: str = os.path.join(model_dir, "SAC_CSA_ODD")
+    model_save_path: str = os.path.join(model_dir, "SAC_CSA_"+env.CSA.mode)
     model.save(model_save_path, include="all")
     
     logger.info(f"Training completed and model saved at {model_save_path}.")      
@@ -255,15 +255,15 @@ def test(model_path: str, env: CoupledStripEnv, image_dir: str) -> None:
     
 # main called function
 ######################      
-def main(CSA: CoupledStripArrangement, train_timesteps: int) -> None:
+def main(CSA: CoupledStripArrangement, train_timesteps: int, TC: str) -> None:
     # environment type
     env_type: str = "caseL" if CSA.er2 == 1.0 else "caseD"
     
     cwd: str = os.getcwd()  
-    model_dir: str = os.path.join(cwd,"training",CSA.mode,env_type,"models") # training/mode/env_type/models
-    log_dir: str = os.path.join(cwd,"training",CSA.mode,env_type,"logs") # training/mode/env_type/logs
-    image_dir: str = os.path.join(cwd,"training",CSA.mode,env_type,"images") # training/mode/env_type/images
-    intermediate_pred_dir: str = os.path.join(cwd,"training",CSA.mode,env_type,"intermediate_prediction") # training/mode/env_type/intermediate_prediction
+    model_dir: str = os.path.join(cwd,"training",CSA.mode,TC,env_type,"models") # training/mode/env_type/models
+    log_dir: str = os.path.join(cwd,"training",CSA.mode,TC,env_type,"logs") # training/mode/env_type/logs
+    image_dir: str = os.path.join(cwd,"training",CSA.mode,TC,env_type,"images") # training/mode/env_type/images
+    intermediate_pred_dir: str = os.path.join(cwd,"training",CSA.mode,TC,env_type,"intermediate_prediction") # training/mode/env_type/intermediate_prediction
     create_directories(mdirRoot=model_dir, 
                     ldirRoot=log_dir, 
                     idirRoot=image_dir, 
@@ -282,7 +282,7 @@ def main(CSA: CoupledStripArrangement, train_timesteps: int) -> None:
                                  device=device,
                                  timesteps=train_timesteps,
                                  intermediate_pred_interval=5000,
-                                 tb_log_name="CSA_ODD")
+                                 tb_log_name="CSA_"+env.CSA.mode)
     
     test(model_path=model_save_path,env=env,image_dir=image_dir)
 
@@ -315,6 +315,6 @@ if __name__ == "__main__":
         er2=1.0, # dielctric constant for medium 2
         num_fs=2000, # number of fourier series coefficients
         num_pts=30, # number of points for the piece wise linear approaximation
-        mode="Odd"
+        mode="ODD"
     )
-    main(CSA=CSA, train_timesteps=30_000)
+    main(CSA=CSA, train_timesteps=30_000, TC="TC1")
