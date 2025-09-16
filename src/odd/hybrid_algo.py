@@ -328,7 +328,7 @@ def main(CSA: CoupledStripArrangement, model_pathD: str, model_pathL: str) -> No
     for index, row in df_test.iterrows():
         logger.info(f"ID: er2 = {row['er2']}")
         CSA.er2 = row["er2"]
-        data_rl, data_ga = run(CSA=CSA, model_pathD=model_pathD,model_pathL=model_pathL,ID="TC-1_"+str(row['er2']))
+        data_rl, data_ga = run(CSA=CSA, model_pathD=model_pathD,model_pathL=model_pathL,ID="TC1_"+str(row['er2']))
         list_zD_RL.append(data_rl["zD"])
         list_zL_RL.append(data_rl["zL"])
         
