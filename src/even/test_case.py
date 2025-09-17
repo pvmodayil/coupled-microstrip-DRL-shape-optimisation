@@ -316,6 +316,9 @@ def get_arrangement(row: pd.Series, model_mode: str) -> CoupledStripArrangement:
     return CSA
 
 def main(model_pathD: str, model_pathL: str, test_case_file: str, model_mode: str) -> None:
+    test_dir: str = os.path.join(os.getcwd(),"test",model_mode) # training/mode/env_type/images
+    create_directories(test_dir=test_dir)
+    
     # zD, zL = run(CSA=CSA, model_path=model_path,ID="TC-3")
     # logger.info(f"The impedances are ZD: {zD} Ohm, ZL: {zL} Ohm")
     df_test = pd.read_csv(test_case_file)
