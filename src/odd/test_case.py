@@ -10,7 +10,7 @@
 #                                     Imports
 #####################################################################################
 import os
-
+import time
 import pandas as pd
 
 import numpy as np
@@ -194,6 +194,7 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
     noise_scale: float = 0.9
     population_size: int = 100
     num_generations: int = 600
+    start_time_GA: float = time.perf_counter()
     result: GAOptResult = ga_cpp.ga_optimize(env.CSA.V0,
                                     env.CSA.space_bw_strps,
                                     env.CSA.width_micrstr,
@@ -209,7 +210,8 @@ def hybrid_algorithm(env: CoupledStripEnv, model: SAC, image_dir: str, case: str
                                     num_generations,
                                     x_left,g_left,
                                     x_right,g_right)
-    
+    time_GA: float = time.perf_counter() - start_time_GA
+    logger.info(f"GA finished in: {time_GA} ")
     ga_energy: float = result["best_energy"]
     data_opt: dict[str, NDArray] = {
         'x_left': x_left,

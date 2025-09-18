@@ -385,7 +385,7 @@ def main(model_pathD: str, model_pathL: str, test_case_file: str, model_mode: st
 
 if __name__ == "__main__":
     
-    model_pathD = os.path.join("training","EVEN","TC1","caseD","models","SAC_CSA_ODD.zip")
-    model_pathL = os.path.join("training","EVEN","TC1","caseL","models","SAC_CSA_ODD.zip")
+    model_pathD = os.path.join("training","EVEN","TC3","caseD","models","SAC_CSA_EVEN.zip")
+    model_pathL = os.path.join("training","EVEN","TC3","caseL","models","SAC_CSA_EVEN.zip")
     test_case_file: str = os.path.join(os.getcwd(), "test", "TestCase1-3.csv")
     main(model_pathD=model_pathD,model_pathL=model_pathL, test_case_file=test_case_file, model_mode = "EVEN")
