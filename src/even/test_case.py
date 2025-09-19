@@ -322,16 +322,15 @@ def main(model_pathD: str, model_pathL: str, test_case_file: str, model_mode: st
     # zD, zL = run(CSA=CSA, model_path=model_path,ID="TC-3")
     # logger.info(f"The impedances are ZD: {zD} Ohm, ZL: {zL} Ohm")
     df_test = pd.read_csv(test_case_file)
-    # list_Wd_Nom: list[float] = []
-    # list_Wl_Nom: list[float] = []
+    list_Wd_Nom: list[float] = []
+    list_Wl_Nom: list[float] = []
     
-    # for index, row in df_test.iterrows():
-    #     Wd, Wl = calculate_nominal_energy(Zd=row["Zd-Nominal"], Zl=row["Zl-Nominal"], V0=1)
-    #     list_Wd_Nom.append(Wd)
-    #     list_Wl_Nom.append(Wl)
-    # df_test["Wd-Nominal"] = list_Wd_Nom
-    # df_test["Wl-Nominal"] = list_Wl_Nom
-    # df_test.to_excel(os.path.join(os.getcwd(),"test",CSA.mode,"TC1-testcases.xlsx"))    
+    for index, row in df_test.iterrows():
+        Wd, Wl = calculate_nominal_energy(Zd=row["Zd-Nominal"], Zl=row["Zl-Nominal"], V0=1)
+        list_Wd_Nom.append(Wd)
+        list_Wl_Nom.append(Wl)
+    df_test["Wd-Nominal"] = list_Wd_Nom
+    df_test["Wl-Nominal"] = list_Wl_Nom
     
     list_zD_RL: list[float] = []
     list_zL_RL: list[float] = []
@@ -387,5 +386,5 @@ if __name__ == "__main__":
     
     model_pathD = os.path.join("training","EVEN","TC3","caseD","models","SAC_CSA_EVEN.zip")
     model_pathL = os.path.join("training","EVEN","TC3","caseL","models","SAC_CSA_EVEN.zip")
-    test_case_file: str = os.path.join(os.getcwd(), "test", "TestCase1-3.csv")
+    test_case_file: str = os.path.join(os.getcwd(), "test", "TestCase1-3_Even.csv")
     main(model_pathD=model_pathD,model_pathL=model_pathL, test_case_file=test_case_file, model_mode = "EVEN")
