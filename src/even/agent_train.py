@@ -305,8 +305,8 @@ def main(CSA: CoupledStripArrangement, train_timesteps: int, TC: str) -> None:
 if __name__ == "__main__":
     CSA: CoupledStripArrangement = CoupledStripArrangement(
         V0=1., # Potential of the sytem, used to scale the system which is defaulted at V0=1.0
-        hw_arra=3E-3, # half width of the arrangement, parameter a
-        ht_arra=2.76E-3, # height of the arrangement, parameter b
+        hw_arra=5E-3, # half width of the arrangement, parameter a
+        ht_arra=1.45E-3, # height of the arrangement, parameter b
         ht_subs=112E-6, # height of the substrate, parameter h
         space_bw_strps=200E-6, # gap between the two microstrips, parameter s
         width_micrstr=150E-6, # width of the microstrip, parameter w
@@ -317,4 +317,4 @@ if __name__ == "__main__":
         num_pts=30, # number of points for the piece wise linear approaximation
         mode="EVEN"
     )
-    main(CSA=CSA, train_timesteps=30_000, TC="TC1")
+    main(CSA=CSA, train_timesteps=50_000, TC="TC1")

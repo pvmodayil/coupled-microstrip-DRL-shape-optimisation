@@ -110,19 +110,20 @@ namespace GA{
     */
     void GeneticAlgorithm::initialize_population(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, double& noise_scale){
         
-        // Vector size (with the expectation that left and right side have same size)
-        size_t delta_size = g_left_start.size() - 1; // Population is made up of deltas
+        // Vector size, left curve has one more point than the delta size due to the prepended zero
+        size_t delta_size_left = g_left_start.size(); // As the delta size is one less than the curve size and we have prepended zero to the left curve, the delta size for left curve is same as the curve size
+        size_t delta_size_right = g_right_start.size() - 1; // No prepend or apend for the right curve
 
         // Random uniform distribution between -1 to 1 scaled to 0 to 1 and further scaled to create random noise
         Eigen::MatrixXd random_noise_left = (
             (noise_scale * 
-                0.5 * (Eigen::MatrixXd::Ones(delta_size, population_size) + Eigen::MatrixXd::Random(delta_size, population_size))
+                0.5 * (Eigen::MatrixXd::Ones(delta_size_left, population_size) + Eigen::MatrixXd::Random(delta_size_left, population_size))
             ).array() * population_left.array()
         ).matrix();
 
         Eigen::MatrixXd random_noise_right = (
             (noise_scale * 
-                0.5 * (Eigen::MatrixXd::Ones(delta_size, population_size) + Eigen::MatrixXd::Random(delta_size, population_size))
+                0.5 * (Eigen::MatrixXd::Ones(delta_size_right, population_size) + Eigen::MatrixXd::Random(delta_size_right, population_size))
             ).array() * population_right.array()
         ).matrix();
 
@@ -232,7 +233,7 @@ namespace GA{
 
     /*
     *******************************************************
-    *                     Reproduction                    *
+    *                     Elite Selection                 *
     *******************************************************
     */
     Eigen::VectorXi GeneticAlgorithm::select_elites(Eigen::ArrayXd& fitness_array, size_t elite_size){
@@ -259,12 +260,13 @@ namespace GA{
     }
 
     void GeneticAlgorithm::reproduce(Eigen::MatrixXd& population_left, Eigen::MatrixXd& population_right, Eigen::ArrayXd& fitness_array, double& eta){
-        // Vector size (with the expectation that left and right side have same size)
-        size_t delta_size = g_left_start.size() - 1; // Population is made up of deltas
+        // Vector size, left curve has one more point than the delta size due to the prepended zero
+        size_t delta_size_left = g_left_start.size(); // As the delta size is one less than the curve size and we have prepended zero to the left curve, the delta size for left curve is same as the curve size
+        size_t delta_size_right = g_right_start.size() - 1; // No prepend or apend for the right curve
 
         // Create a random noise scaled matrix for mutation
-        Eigen::MatrixXd new_population_left(delta_size, population_size);
-        Eigen::MatrixXd new_population_right(delta_size, population_size);
+        Eigen::MatrixXd new_population_left(delta_size_left, population_size);
+        Eigen::MatrixXd new_population_right(delta_size_right, population_size);
         
         // Select Elites
         constexpr size_t elite_size = 10;
@@ -312,14 +314,15 @@ namespace GA{
         double previous_energy = result.best_energy;
         
         // starting g0
-        double g0_left = g_left_start(0);
+        double original_g0_left = g_left_start(0); // Not used kept for reference, the original starting point of the left curve
+        double g0_left = 0.0; // New anchor point to make the original starting point vary
         double g0_right = 1.0;
 
         // Need the length for further processing
         size_t g_left_size = g_left_start.size();
         size_t g_right_size = g_right_start.size();
         
-        // Engineer in the requirement for same number of coordinates
+        // Engineer in the requirement for same number of coordinates just so that vector_size is consistent, this is not a fundamental requirement.
         if (g_left_size != g_right_size){
             throw std::invalid_argument(std::format("For efficient processing of GA optimisation,\
                 the algorithm expects both left and right sides to have same number of coordinates.\
@@ -330,8 +333,13 @@ namespace GA{
         // Vector size (with the expectation that left and right side have same size)
         size_t vector_size = g_left_size;
 
+        // Extend the left side curve with zero prepend 
+        Eigen::ArrayXd g_left_extended(vector_size + 1);
+        g_left_extended(0) = 0.0; // Prepend zero to the left side curve
+        g_left_extended.tail(vector_size) = g_left_start;
+
         // Get the delta arrays
-        Eigen::ArrayXd delta_left = curve_to_delta(g_left_start,vector_size,false);
+        Eigen::ArrayXd delta_left = curve_to_delta(g_left_extended,vector_size + 1,false);
         Eigen::ArrayXd delta_right = curve_to_delta(g_right_start,vector_size,true);
 
         // Create an initial population matrix and fitness array
@@ -353,10 +361,10 @@ namespace GA{
             // Fitness calculation
             #pragma omp parallel for
             for(int i=0; i<population_size; ++i){
-                Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false,g0_left);
+                Eigen::ArrayXd individual_left = (delta_to_curve(population_left.col(i),vector_size+1,false,g0_left)).tail(vector_size); // Left side delta has an extra prepended point
                 Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true,g0_right);
+                
                 // Since the entire curve is given for the crossover make sure the boundary values are correct
-                individual_left(0) = g0_left;
                 individual_left(vector_size-1) = 1.0;
                 individual_right(0) = 1.0;
                 individual_right(vector_size-1) = 0.0;
@@ -375,10 +383,10 @@ namespace GA{
         // Final population fitness calculation
         #pragma omp parallel for
         for(int i=0; i<population_size; ++i){
-            Eigen::ArrayXd individual_left = delta_to_curve(population_left.col(i),vector_size,false,g0_left);
+            Eigen::ArrayXd individual_left = (delta_to_curve(population_left.col(i),vector_size+1,false,g0_left)).tail(vector_size); // Left side delta has an extra prepended point
             Eigen::ArrayXd individual_right = delta_to_curve(population_right.col(i),vector_size,true,g0_right);
+            
             // Since the entire curve is given for the crossover make sure the boundary values are correct
-            individual_left(0) = g0_left;
             individual_left(vector_size-1) = 1.0;
             individual_right(0) = 1.0;
             individual_right(vector_size-1) = 0.0;
@@ -386,10 +394,10 @@ namespace GA{
         }
 
         // Optimized curve and metrics
-        best_energy = fitness_array.minCoeff(&best_index); // Get the best energy of the last generation
+        best_energy = fitness_array.minCoeff(&best_index); // Get the best energy of the last generation and the corresponding index
         
-        result.best_curve_left = delta_to_curve(population_left.col(best_index), vector_size, false, g0_left); // Store the best curve of the last generation
-        result.best_curve_left(0) = g0_left;
+        // Store the best curve of the last generation
+        result.best_curve_left = (delta_to_curve(population_left.col(best_index), vector_size+1, false, g0_left)).tail(vector_size);
         result.best_curve_left(vector_size-1) = 1.0;
 
         result.best_curve_right = delta_to_curve(population_right.col(best_index), vector_size, true, g0_right);
