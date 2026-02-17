@@ -79,16 +79,28 @@ def predict(env: CoupledStripEnv, model: SAC) -> NDArray[np.float64]:
     
     return np.abs(action)
 
-def possible_range(lower_bound: float, upper_bound: float) -> NDArray:
+def possible_range(lower_bound: float, upper_bound: float, min_points: int = 10) -> NDArray:
     # Available space
-    gap: float = upper_bound - lower_bound
+    gap = upper_bound - lower_bound
+    # Handle degenerate or tiny ranges
+    if gap <= 0:
+        # Return a single value or raise a controlled error, as you prefer
+        return np.array([lower_bound], dtype=float)
+
+    step = 0.1 * gap
+    if step <= 0:
+        return np.array([lower_bound], dtype=float)
+
+    # print(lower_bound)
+    # print(upper_bound)
+    # print(step)
+    arr = np.arange(lower_bound + step, upper_bound, step)
+
+    # Optional: ensure at least some points
+    if arr.size == 0:
+        arr = np.linspace(lower_bound, upper_bound, min_points)
     
-    # Step size is a small fraction of the available space
-    step: float = 0.1*gap
-    
-    possible_range_array: NDArray = np.arange(lower_bound+step, upper_bound, step)
-    
-    return possible_range_array
+    return arr
 
 def evaluate(env: CoupledStripEnv, model: SAC, new_hw_arra: float) -> float:
     env.CSA.hw_arra = new_hw_arra
@@ -346,24 +358,25 @@ def main(model_pathD: str, model_pathL: str, test_case_file: str, model_mode: st
     list_eps_eff_GA: list[float] = []
     
     for index, row in df_test.iterrows():
-        logger.info(f"Test Case = {row['TC']}")
+        if row["TC"] is not None:
+            logger.info(f"Test Case = {row['TC']}")
 
-        CSA: CoupledStripArrangement = get_arrangement(row=row, model_mode=model_mode)
-        data_rl, data_ga = run(CSA=CSA, model_pathD=model_pathD,model_pathL=model_pathL,ID=str(row['TC']))
-        list_zD_RL.append(data_rl["zD"])
-        list_zL_RL.append(data_rl["zL"])
-        
-        list_zD_GA.append(data_ga["zD"])
-        list_zL_GA.append(data_ga["zL"])
-        
-        list_Wd_RL.append(data_rl["wD"])
-        list_Wl_RL.append(data_rl["wL"])
-        
-        list_Wd_GA.append(data_ga["wD"])
-        list_Wl_GA.append(data_ga["wL"])
-        
-        list_eps_eff_RL.append(data_rl["epsEff"])
-        list_eps_eff_GA.append(data_ga["epsEff"])
+            CSA: CoupledStripArrangement = get_arrangement(row=row, model_mode=model_mode)
+            data_rl, data_ga = run(CSA=CSA, model_pathD=model_pathD,model_pathL=model_pathL,ID=str(row['TC']))
+            list_zD_RL.append(data_rl["zD"])
+            list_zL_RL.append(data_rl["zL"])
+            
+            list_zD_GA.append(data_ga["zD"])
+            list_zL_GA.append(data_ga["zL"])
+            
+            list_Wd_RL.append(data_rl["wD"])
+            list_Wl_RL.append(data_rl["wL"])
+            
+            list_Wd_GA.append(data_ga["wD"])
+            list_Wl_GA.append(data_ga["wL"])
+            
+            list_eps_eff_RL.append(data_rl["epsEff"])
+            list_eps_eff_GA.append(data_ga["epsEff"])
         
     df_test["Zd_RL"] = list_zD_RL
     df_test["Zl_RL"] = list_zL_RL
@@ -384,7 +397,7 @@ def main(model_pathD: str, model_pathL: str, test_case_file: str, model_mode: st
 
 if __name__ == "__main__":
     
-    model_pathD = os.path.join("training","EVEN","TC3","caseD","models","SAC_CSA_EVEN.zip")
-    model_pathL = os.path.join("training","EVEN","TC3","caseL","models","SAC_CSA_EVEN.zip")
+    model_pathD = os.path.join("training","EVEN","TC1","caseD","models","SAC_CSA_EVEN.zip")
+    model_pathL = os.path.join("training","EVEN","TC1","caseD","models","SAC_CSA_EVEN.zip")
     test_case_file: str = os.path.join(os.getcwd(), "test", "TestCase1-3_Even.csv")
     main(model_pathD=model_pathD,model_pathL=model_pathL, test_case_file=test_case_file, model_mode = "EVEN")
