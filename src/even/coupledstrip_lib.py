@@ -325,7 +325,7 @@ def logcosh(vector: NDArray[np.float64]) -> NDArray[np.float64]:
 @njit
 def calculate_energy(er1: float, er2: float, hw_arra: float, ht_arra: float, ht_subs: float, vn: np.ndarray) -> float:
     """
-    Function to calculate the energy of coupled strip system odd mode
+    Function to calculate the energy of coupled strip system even mode
 
     Parameters
     ----------
