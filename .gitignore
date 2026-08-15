@@ -23,3 +23,7 @@ src/even/ga_lib/src/data/
 # external dependencies
 src/odd/ga_lib/src/extern/
 src/even/ga_lib/src/extern/
+
+# Agent files
+docs/
+AGENTS.md
